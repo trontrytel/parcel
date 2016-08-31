@@ -233,7 +233,8 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300., r_0=.022,
   chem_rho = 1.8e3,
   sstp_cond = 1,
   sstp_chem = 1,
-  wait = 0
+  wait = 0,
+  stop_at_RHmax = True
 ):
   """
   Args:
@@ -282,8 +283,10 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300., r_0=.022,
     pprof   (Optional[string]):   method to calculate pressure profile used to calculate 
                                   dry air density that is used by the super-droplet scheme
                                   valid options are: pprof_const_th_rv, pprof_const_rhod, pprof_piecewise_const_rhod
-    wait (Optional[float]):       number of timesteps to run parcel model with vertical velocity=0 at the end of simulation
-                                  (added for testing)
+
+    wait (Optional[float]):          number of timesteps to run parcel model with vertical velocity=0 at the end of simulation
+                                     (added for testing)
+    stop_at_RHmax (Optional[bool]):  stop the simulation when RH = RH_max (when RH starts decreasing) (added for testing)
    """
   # packing function arguments into "opts" dictionary
   args, _, _, _ = inspect.getargvalues(inspect.currentframe())
@@ -370,20 +373,32 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300., r_0=.022,
 
       # microphysics
       _micro_step(micro, state, info, opts, it, fout)
- 
-      # TODO: only if user wants to stop @ RH_max
-      #if (state["RH"] < info["RH_max"]): break
- 
-      # output
-      if (it % outfreq == 0):
+
+
+      # output if the option of stopping at RHmax was not selected
+      if (it % outfreq == 0 and not opts["stop_at_RHmax"]):
         print str(round(it / (nt * 1.) * 100, 2)) + " %"
         rec = it/outfreq
         _output(fout, opts, micro, state, rec, spectra)
 
+      # stop the simulation at RH_max if requested
+      if (opts["stop_at_RHmax"] and (state["RH"] < info["RH_max"])): 
+        rec = 1
+        _output(fout, opts, micro, state, rec, spectra)
+
+        # save the number of activated cloud droplets - TODO
+        micro.diag_rw_ge_rc()
+        micro.diag_wet_mom(0)
+        N_act = np.frombuffer(micro.outbuf())[0]
+
+        info = { "N_act_at_RH_max" : N_act}
+
+        break
+ 
     _save_attrs(fout, info)
     _save_attrs(fout, opts)
 
-    if wait != 0:
+    if opts["wait"]:
       for it in range (nt+1, nt+wait):
         state["t"] = it * dt
         _micro_step(micro, state, info, opts, it, fout)
