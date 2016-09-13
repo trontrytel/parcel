@@ -29,8 +29,11 @@ For test automation py.test Python package is used.
 To run all the tests  please type in terminal
 
   $ py.test unit_test/
+  
   $ py.test unit_test_debug/
+  
   $ py.test long_test/
+  
 
 Some tests generate plots. 
 These plots are saved in /plots/outputs folder.
