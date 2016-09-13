@@ -75,21 +75,20 @@ disp(w);
 % TODO - how is LCL defined?
 z = ncread(outfile, 'z');
 z_RHmax = z(2);
-disp(z_RHmax);
+disp('TODO - how is LCL defined?');
 
 % 9.  mass concentration of soluble aerosol  [ug of aerosol mass / m3 of air]
 % TODO - add to attributes
-% TODO - this will be the same as in the initial condition
+% TODO - this should be the same as in the initial condition - check
 tmp = ncread(outfile, 'aerosol_m3');
 chem_rho = ncreadatt(outfile,'/', 'chem_rho');
 mass_a = sum(tmp(:,2)) * rhod * chem_rho * 4/3. * pi * 1e9;
 disp(mass_a);
 
 % 10. aerosol number concentration [1/cm3]
-%TODO - check converting o STP for initial condition for N_tot for aerosols
 %TODO - add to attributes
-%TODO - why is it not 60?
-%TODO - this will be the same as initial condition?
+%TODO - why is it not 60? - this should be the same as initial condition?
+%TODO - add converting o STP for initial condition for N_tot for aerosols and see if it fixes this issue
 tmp = ncread(outfile, 'aerosol_m0');  
 N_a = sum(tmp(:,2)) * rhod * 1e-6;
 disp(N_a);
