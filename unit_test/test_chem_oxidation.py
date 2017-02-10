@@ -60,9 +60,9 @@ def test_moles_const_dsl_dsc_rct(data, chem, eps = {"CO2": 3e-14, "NH3": 3.4e-15
      The test for S4 and S6 moles is done separately below
      """
      # read the data
-     n_C4 = data.variables["chem_CO2_a"][:,0]  / cm.M_CO2_H2O
-     n_N5 = data.variables["chem_HNO3_a"][:,0] / cm.M_HNO3
-     n_N3 = data.variables["chem_NH3_a"][:,0]  / cm.M_NH3_H2O
+     n_C4 = data.variables["chem_CO2_a"][:,0] 
+     n_N5 = data.variables["chem_HNO3_a"][:,0]
+     n_N3 = data.variables["chem_NH3_a"][:,0] 
 
      # do the checking:       
      # NH3 -> NH4+ OH-
@@ -75,18 +75,13 @@ def test_moles_const_dsl_dsc_rct(data, chem, eps = {"CO2": 3e-14, "NH3": 3.4e-15
          ini = data.variables[chem+"_g"][0] / cm.M_HNO3 + n_N5[0]
          end = data.variables[chem+"_g"][-1]/ cm.M_HNO3 + n_N5[-1]
  
-     # SO2_g -> SO2_a HSO3- SO3--
-     if chem == "SO2":
-         ini = data.variables[chem+"_g"][0] / cm.M_SO2 + n_S4[0]
-         end = data.variables[chem+"_g"][-1]/ cm.M_SO2 + n_S4[-1]
-
      # CO2 -> CO2_a HCO3- CO3--
      if chem == "CO2":
          ini = data.variables[chem+"_g"][0] / cm.M_CO2 + n_C4[0]
          end = data.variables[chem+"_g"][-1]/ cm.M_CO2 + n_C4[-1]
 
      # do the checking
-     assert np.isclose(end, ini, atol=0, rtol=eps[chem]), chem + " : " + str((ini-end)/ini)
+     assert np.isclose(end, ini, atol=0, rtol=eps[chem]), chem + "relative error: " + str((ini-end)/ini)
 
 def test_moles_const_S4_S6(data, eps = 5e-10):
      """
@@ -97,14 +92,14 @@ def test_moles_const_S4_S6(data, eps = 5e-10):
      end - number of moles in gas phase and aq phase (both ions and not) at t=end
      """
      # read the data
-     n_S4 = data.variables["chem_SO2_a"][:,0] / cm.M_SO2_H2O
-     n_S6 = data.variables["chem_S_VI"][:,0]  / cm.M_H2SO4
+     n_S4 = data.variables["chem_SO2_a"][:,0]
+     n_S6 = data.variables["chem_S_VI"][:,0]
 
      ini_S = data.variables["SO2_g"][0]  / cm.M_SO2 + n_S4[0]  + n_S6[0]
      end_S = data.variables["SO2_g"][-1] / cm.M_SO2 + n_S4[-1] + n_S6[-1]
 
      # do the checking
-     assert np.isclose(end_S, ini_S, atol=0, rtol=eps), "S4 + S6 : " + str((ini_S-end_S)/ini_S)
+     assert np.isclose(end_S, ini_S, atol=0, rtol=eps), "S4 + S6: " + str((ini_S-end_S)/ini_S)
 
 def test_H2SO4_vs_O3_H2O2(data, eps = 2e-11):
     """
@@ -113,21 +108,21 @@ def test_H2SO4_vs_O3_H2O2(data, eps = 2e-11):
     """
 
     ini_O3   = data.variables["O3_g"][0] / cm.M_O3 + \
-               data.variables["chem_O3_a"][0, :].sum() / cm.M_O3
+               data.variables["chem_O3_a"][0, :].sum()
 
     ini_H2O2 = data.variables["H2O2_g"][0] / cm.M_H2O2 + \
-               data.variables["chem_H2O2_a"][0, :].sum() / cm.M_H2O2
+               data.variables["chem_H2O2_a"][0, :].sum()
 
-    ini_S6   = data.variables["chem_S_VI"][0, :].sum() / cm.M_H2SO4
+    ini_S6   = data.variables["chem_S_VI"][0, :].sum()
 
 
     end_O3   = data.variables["O3_g"][-1] / cm.M_O3 + \
-               data.variables["chem_O3_a"][-1, :].sum() / cm.M_O3
+               data.variables["chem_O3_a"][-1, :].sum()
 
     end_H2O2 = data.variables["H2O2_g"][-1] / cm.M_H2O2 + \
-               data.variables["chem_H2O2_a"][-1, :].sum() / cm.M_H2O2
+               data.variables["chem_H2O2_a"][-1, :].sum()
 
-    end_S6   = data.variables["chem_S_VI"][-1, :].sum() / cm.M_H2SO4
+    end_S6   = data.variables["chem_S_VI"][-1, :].sum()
 
     # change on O3 and H2O2 moles
     dn_gas = (ini_O3 - end_O3) + (ini_H2O2 - end_H2O2)  

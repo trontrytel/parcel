@@ -58,31 +58,29 @@ def test_is_electroneutral(data, eps = 1e-6):
     TODO - why is the accuracy so low?
     """
     # read the data
-    m_H  = data.variables["chem_H"][-1, :]
-    m_S4 = data.variables["chem_SO2_a"][-1, :]
-    m_C4 = data.variables["chem_CO2_a"][-1, :]
-    m_N5 = data.variables["chem_HNO3_a"][-1, :]
-    m_N3 = data.variables["chem_NH3_a"][-1, :]
-    m_S6 = data.variables["chem_S_VI"][-1, :]
+    n_H  = data.variables["chem_H"][-1, :]
+    n_S4 = data.variables["chem_SO2_a"][-1, :]
+    n_C4 = data.variables["chem_CO2_a"][-1, :]
+    n_N5 = data.variables["chem_HNO3_a"][-1, :]
+    n_N3 = data.variables["chem_NH3_a"][-1, :]
+    n_S6 = data.variables["chem_S_VI"][-1, :]
     V    = data.variables["radii_m3"][-1, :] * 4./3 * math.pi
     T    = data.variables["T"][-1]
 
     # helper for concentration of H+
-    conc_H = m_H / cm.M_H / V
+    conc_H = n_H / V
 
     # positive ions
-    p1 = m_H / cm.M_H
-    p2 = fn.diag_n_NH4(m_N3, T, conc_H)
-
+    p1    = n_H
+    p2    = fn.diag_n_NH4(n_N3, T, conc_H)
     n_pos = p1 +p2
 
     # negative ions
-    n1 = cm.K_H2O * V / conc_H
-    n2 = fn.diag_n_NO3(m_N5, T, conc_H)
-    n3 = fn.diag_n_HSO3(m_S4, T, conc_H) + 2 * fn.diag_n_SO3(m_S4, T, conc_H)
-    n4 = fn.diag_n_HCO3(m_C4, T, conc_H) + 2 * fn.diag_n_CO3(m_C4, T, conc_H)
-    n5 = fn.diag_n_HSO4(m_S6, T, conc_H) + 2 * fn.diag_n_SO4(m_S6, T, conc_H)
-
+    n1    = cm.K_H2O * V / conc_H
+    n2    = fn.diag_n_NO3(n_N5, T, conc_H)
+    n3    = fn.diag_n_HSO3(n_S4, T, conc_H) + 2 * fn.diag_n_SO3(n_S4, T, conc_H)
+    n4    = fn.diag_n_HCO3(n_C4, T, conc_H) + 2 * fn.diag_n_CO3(n_C4, T, conc_H)
+    n5    = fn.diag_n_HSO4(n_S6, T, conc_H) + 2 * fn.diag_n_SO4(n_S6, T, conc_H)
     n_neg = n1 + n2 + n3 + n4 + n5
 
     assert np.isclose(n_neg, n_pos, atol=0, rtol=eps),\
@@ -116,15 +114,14 @@ def test_dissoc_constants(data, ion, eps =\
      V      = data.variables["radii_m3"][-1, :] * 4./3 * math.pi
      T      = data.variables["T"][-1]
 
-     m_H  = data.variables["chem_H"][-1, :]
-     m_S4 = data.variables["chem_SO2_a"][-1, :]
-     m_C4 = data.variables["chem_CO2_a"][-1, :]
-     m_N5 = data.variables["chem_HNO3_a"][-1, :]
-     m_N3 = data.variables["chem_NH3_a"][-1, :]
+     n_H  = data.variables["chem_H"][-1, :]
+     n_S4 = data.variables["chem_SO2_a"][-1, :]
+     n_C4 = data.variables["chem_CO2_a"][-1, :]
+     n_N5 = data.variables["chem_HNO3_a"][-1, :]
+     n_N3 = data.variables["chem_NH3_a"][-1, :]
 
      # helpers for H+
-     conc_H = m_H / cm.M_H / V
-     n_H = m_H / cm.M_H
+     conc_H = n_H / V
 
      # dissociation constants K = [A][B]/[AB]
      def check_ions(n_A, n_B, n_AB, vol, teor_const, eps):
@@ -136,17 +133,17 @@ def test_dissoc_constants(data, ion, eps =\
 
      # do the checking
      if ion == "SO2":\
-       check_ions(n_H, fn.diag_n_HSO3(m_S4, T, conc_H), fn.diag_n_SO2_H2O(m_S4, T, conc_H), V, fn.dissoc_teor(ion, T), eps[ion])
+       check_ions(n_H, fn.diag_n_HSO3(n_S4, T, conc_H), fn.diag_n_SO2_H2O(n_S4, T, conc_H), V, fn.dissoc_teor(ion, T), eps[ion])
      elif ion == "HSO3":\
-       check_ions(n_H, fn.diag_n_SO3(m_S4, T, conc_H),  fn.diag_n_HSO3(m_S4, T, conc_H),    V, fn.dissoc_teor(ion, T), eps[ion]) 
+       check_ions(n_H, fn.diag_n_SO3(n_S4, T, conc_H),  fn.diag_n_HSO3(n_S4, T, conc_H),    V, fn.dissoc_teor(ion, T), eps[ion]) 
      elif ion == "CO2":\
-       check_ions(n_H, fn.diag_n_HCO3(m_C4, T, conc_H), fn.diag_n_CO2_H2O(m_C4, T, conc_H), V, fn.dissoc_teor(ion, T), eps[ion])
+       check_ions(n_H, fn.diag_n_HCO3(n_C4, T, conc_H), fn.diag_n_CO2_H2O(n_C4, T, conc_H), V, fn.dissoc_teor(ion, T), eps[ion])
      elif ion == "HCO3":\
-       check_ions(n_H, fn.diag_n_CO3(m_C4, T, conc_H),  fn.diag_n_HCO3(m_C4, T, conc_H),    V, fn.dissoc_teor(ion, T), eps[ion])
+       check_ions(n_H, fn.diag_n_CO3(n_C4, T, conc_H),  fn.diag_n_HCO3(n_C4, T, conc_H),    V, fn.dissoc_teor(ion, T), eps[ion])
      elif ion == "HNO3":\
-       check_ions(n_H, fn.diag_n_NO3(m_N5, T, conc_H),  fn.diag_n_HNO3(m_N5, T, conc_H),    V, fn.dissoc_teor(ion, T), eps[ion])
+       check_ions(n_H, fn.diag_n_NO3(n_N5, T, conc_H),  fn.diag_n_HNO3(n_N5, T, conc_H),    V, fn.dissoc_teor(ion, T), eps[ion])
      elif ion == "NH3":\
-       check_ions(fn.diag_n_NH4(m_N3, T, conc_H), cm.K_H2O / conc_H * V, fn.diag_n_NH3_H2O(m_N3, T, conc_H), V, fn.dissoc_teor(ion, T),  eps[ion])
+       check_ions(fn.diag_n_NH4(n_N3, T, conc_H), cm.K_H2O / conc_H * V, fn.diag_n_NH3_H2O(n_N3, T, conc_H), V, fn.dissoc_teor(ion, T),  eps[ion])
      else: assert False
 
 def test_S6_dissoc(data, eps_HSO4=4e-16, eps_SO4 = 3e-16):
@@ -160,22 +157,22 @@ def test_S6_dissoc(data, eps_HSO4=4e-16, eps_SO4 = 3e-16):
     # read the data 
     V      = data.variables["radii_m3"][-1, :] * 4./3 * math.pi
     T      = data.variables["T"][-1]
-    m_H    = data.variables["chem_H"][-1, :]
-    m_S6   = data.variables["chem_S_VI"][-1, :]
+    n_H    = data.variables["chem_H"][-1, :]
+    n_S6   = data.variables["chem_S_VI"][-1, :]
 
     # helper for H+
-    conc_H = m_H / cm.M_H / V
+    conc_H = n_H / V
 
     # dissociation for HSO4 
-    left_HSO4 = fn.diag_n_HSO4(m_S6, T, conc_H) / V
-    rght_HSO4 = (conc_H * m_S6 / cm.M_H2SO4 / V) / (conc_H + fn.dissoc_teor("HSO4", T))
+    left_HSO4 = fn.diag_n_HSO4(n_S6, T, conc_H) / V
+    rght_HSO4 = (conc_H * n_S6 / V) / (conc_H + fn.dissoc_teor("HSO4", T))
 
     assert np.isclose(left_HSO4, rght_HSO4 , atol=0, rtol=eps_HSO4),\
                        " HSO4 dissoc error: "+ str((left_HSO4 - rght_HSO4)/left_HSO4)
 
     # dissociation for SO4
-    left_SO4 = fn.diag_n_SO4(m_S6, T, conc_H) / V
-    rght_SO4 = (fn.dissoc_teor("HSO4", T) * m_S6 / cm.M_H2SO4 / V)  / (conc_H + fn.dissoc_teor("HSO4", T))
+    left_SO4 = fn.diag_n_SO4(n_S6, T, conc_H) / V
+    rght_SO4 = (fn.dissoc_teor("HSO4", T) * n_S6 / V)  / (conc_H + fn.dissoc_teor("HSO4", T))
 
     assert np.isclose(left_SO4, rght_SO4 , atol=0, rtol=eps_SO4),\
                        " SO4 dissoc error: " + str((left_SO4 -  rght_SO4)/left_SO4)
@@ -192,18 +189,18 @@ def test_moles_const_dsl_dsc(data, chem, eps =\
 
      """
      # read the data
-     n_S4 = data.variables["chem_SO2_a"][:,0]  / cm.M_SO2_H2O
-     n_C4 = data.variables["chem_CO2_a"][:,0]  / cm.M_CO2_H2O
-     n_N5 = data.variables["chem_HNO3_a"][:,0] / cm.M_HNO3
-     n_N3 = data.variables["chem_NH3_a"][:,0]  / cm.M_NH3_H2O
+     n_S4 = data.variables["chem_SO2_a"][:,0]  
+     n_C4 = data.variables["chem_CO2_a"][:,0]  
+     n_N5 = data.variables["chem_HNO3_a"][:,0] 
+     n_N3 = data.variables["chem_NH3_a"][:,0] 
 
      # do the checking:       
      # O3 and H2O2 (they don't dissociate)
      if  chem in ["O3", "H2O2"] : 
          molar_mass = getattr(cm, "M_"+chem)
 
-         ini = (data.variables[chem+"_g"][0] + data.variables[chem+"_a"][0]) / molar_mass
-         end = (data.variables[chem+"_g"][-1] + data.variables[chem+"_a"][-1]) / molar_mass
+         ini = data.variables[chem+"_g"][0]   / molar_mass + data.variables[chem+"_a"][0] 
+         end = data.variables[chem+"_g"][-1]  / molar_mass + data.variables[chem+"_a"][-1]
  
      # NH3 -> NH4+ OH-
      if chem == "NH3":
@@ -226,7 +223,7 @@ def test_moles_const_dsl_dsc(data, chem, eps =\
          end = data.variables[chem+"_g"][-1]/ cm.M_CO2 + n_C4[-1]
 
      # do the checking
-     assert np.isclose(end, ini, atol=0, rtol=eps[chem]), chem + " : " + str((ini-end)/ini)
+     assert np.isclose(end, ini, atol=0, rtol=eps[chem]), chem + "relative error: " + str((ini-end)/ini)
 
 def test_moles_const_S6_dsl_dsc(data, eps=1e-15):
     """
@@ -235,14 +232,10 @@ def test_moles_const_S6_dsl_dsc(data, eps=1e-15):
 
     """
     # read the data
-    m_S6_ini = data.variables["chem_S_VI"][0, :]
-    m_S6     = data.variables["chem_S_VI"][-1, :]
+    ini = data.variables["chem_S_VI"][0, :].sum()
+    end = data.variables["chem_S_VI"][-1, :].sum()
 
-    # convert to moles
-    n_S6_ini       = m_S6_ini.sum() / cm.M_H2SO4
-    n_S6_end       = m_S6.sum() / cm.M_H2SO4
-
-    assert np.isclose(n_S6_ini, n_S6_end, atol=0, rtol=eps),       "1: " + str((n_S6_end - n_S6_ini) / n_S6_ini)
+    assert np.isclose(ini, end, atol=0, rtol=eps), "relative error: " + str((end - ini) / ini)
 
 def test_chem_plot(data):
     """

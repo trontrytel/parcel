@@ -100,9 +100,9 @@ def plot_chem(data, output_folder = '', output_title = ''):
     t = data.variables["t"][spn_idx:]
 
     n_o3g   = data.variables["O3_g"][spn_idx:] / cm.M_O3
-    n_o3a   = data.variables["O3_a"][spn_idx:] / cm.M_O3
+    n_o3a   = data.variables["O3_a"][spn_idx:]
     n_h2o2g = data.variables["H2O2_g"][spn_idx:] / cm.M_H2O2
-    n_h2o2a = data.variables["H2O2_a"][spn_idx:] / cm.M_H2O2
+    n_h2o2a = data.variables["H2O2_a"][spn_idx:]
 
     plots[0].plot(n_o3g, t, style)
     #plots[0].legend(loc='upper right')
@@ -133,12 +133,12 @@ def plot_chem(data, output_folder = '', output_title = ''):
       ax.set_ylabel('t [s]')
 
     t   = data.variables["t"][spn_idx:]
-    n_H = np.squeeze(data.variables["plt_ch_H"][spn_idx:]) / cm.M_H
+    n_H = np.squeeze(data.variables["plt_ch_H"][spn_idx:])
     vol = np.squeeze(data.variables["plt_rw_m3"][spn_idx:]) * 4/3. * math.pi
     pH  = -1 * np.log10(n_H / vol / 1e3)
                                     # litres
     plots[0].plot(pH,                                                        t, style)
-    plots[1].plot(np.squeeze(data.variables["plt_ch_H"][spn_idx:])  / cm.M_H  , t, style)
+    plots[1].plot(np.squeeze(data.variables["plt_ch_H"][spn_idx:]), t, style)
     plots[2].plot(cm.K_H2O / np.squeeze(data.variables["plt_ch_H"][spn_idx:]) * vol , t, style)
 
     plt.tight_layout()
@@ -162,7 +162,7 @@ def plot_chem(data, output_folder = '', output_title = ''):
 
     t    = data.variables["t"][spn_idx:]
     n_nh3g = data.variables["NH3_g"][spn_idx:] / cm.M_NH3
-    n_N3 = np.squeeze(data.variables["plt_ch_NH3_a"][spn_idx:]) / cm.M_NH3_H2O
+    n_N3 = np.squeeze(data.variables["plt_ch_NH3_a"][spn_idx:])
 
     plots[0].plot(n_nh3g, t, style)
     plots[1].plot(n_N3, t, style)
@@ -190,7 +190,7 @@ def plot_chem(data, output_folder = '', output_title = ''):
 
     t   = data.variables["t"][spn_idx:]
     n_hno3g = data.variables["HNO3_g"][spn_idx:] / cm.M_HNO3
-    n_N5 = np.squeeze(data.variables["plt_ch_HNO3_a"][spn_idx:]) / cm.M_HNO3
+    n_N5 = np.squeeze(data.variables["plt_ch_HNO3_a"][spn_idx:])
  
     plots[0].plot(n_hno3g, t, style)
     plots[1].plot(n_N5,    t, style)
@@ -216,7 +216,7 @@ def plot_chem(data, output_folder = '', output_title = ''):
 
     t   = data.variables["t"][spn_idx:]
     n_co2g = data.variables["CO2_g"][spn_idx:] / cm.M_CO2
-    n_C4 = np.squeeze(data.variables["plt_ch_CO2_a"][spn_idx:]) / cm.M_CO2_H2O
+    n_C4 = np.squeeze(data.variables["plt_ch_CO2_a"][spn_idx:])
  
     plots[0].plot(n_co2g, t, style)
     plots[1].plot(n_C4, t, style)
@@ -254,8 +254,8 @@ def plot_chem(data, output_folder = '', output_title = ''):
     rhod = data.variables["rhod"][spn_idx:]
   
     n_so2g = data.variables["SO2_g"][spn_idx:] / cm.M_SO2
-    n_S4 = np.squeeze(data.variables["plt_ch_SO2_a"][spn_idx:]) / cm.M_SO2_H2O
-    n_S6 = np.squeeze(data.variables["plt_ch_S_VI"][spn_idx:])  / cm.M_H2SO4
+    n_S4 = np.squeeze(data.variables["plt_ch_SO2_a"][spn_idx:])
+    n_S6 = np.squeeze(data.variables["plt_ch_S_VI"][spn_idx:])
 
     plots[0].plot(n_so2g, t, style)
     plots[1].plot(n_S4, t, style)

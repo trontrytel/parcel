@@ -63,7 +63,7 @@ def data(request):
         T    = tmp_data.variables["T"][-1]
         rhod = tmp_data.variables["rhod"][-1]
         r3   = tmp_data.variables["radii_m3"][-1,:]
-        n_H  = tmp_data.variables["chem_H"][-1,:] / cm.M_H
+        n_H  = tmp_data.variables["chem_H"][-1,:]
     
         # water weighted average pH at the end of the simulation:
         nom = 0
@@ -77,7 +77,7 @@ def data(request):
         s6_ini = tmp_data.variables["chemd_S_VI"][0, :]
         s6_end = tmp_data.variables["chemd_S_VI"][-1, :]
     
-        sulf_ppt = fn.mix_ratio_to_mole_frac((np.sum(s6_end) - np.sum(s6_ini)), p, cm.M_H2SO4, T, rhod) * 1e12
+        sulf_ppt = fn.mix_ratio_to_mole_frac((np.sum(s6_end) - np.sum(s6_ini)) * cm.M_H2SO4, p, cm.M_H2SO4, T, rhod) * 1e12
       
         # number of droplets at RH = max:
         n_tot = tmp_data.variables["acti_m0"][12, 0] * rhod * 1e-6

@@ -53,15 +53,10 @@ def test_moles_const_dsl(data, chem, eps = {"SO2": 3e-14, "O3": 2e-14,  "H2O2": 
     end - number of moles in gas and aq phase at t=end
 
     """
-    if chem in ["O3", "H2O2", "HNO3"]:
-      M_gas = getattr(cm, "M_"+chem)
-      M_aq  = M_gas
-    elif chem in ["SO2", "CO2", "NH3"]:
-      M_gas = getattr(cm, "M_"+chem)
-      M_aq  = getattr(cm, "M_"+chem+"_H2O")
+    M_gas = getattr(cm, "M_"+chem)
 
-    ini = data.variables[chem+"_g"][0]  / M_gas + data.variables[chem+"_a"][0]  / M_aq
-    end = data.variables[chem+"_g"][-1] / M_gas + data.variables[chem+"_a"][-1] / M_aq
+    ini = data.variables[chem+"_g"][0]  / M_gas + data.variables[chem+"_a"][0]
+    end = data.variables[chem+"_g"][-1] / M_gas + data.variables[chem+"_a"][-1]
 
     assert np.isclose(end, ini, atol=0, rtol=eps[chem]), chem + " " + str((ini-end)/ini)
 

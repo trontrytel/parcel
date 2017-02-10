@@ -56,7 +56,7 @@ def plot_fig1(data, output_folder = '', output_title = ''):
     # calculate SO2 gas volume concentration
     tmp1 = fn.mix_ratio_to_mole_frac(data.variables["SO2_g"][:], p, cm.M_SO2, T, rhod)
     tmp2 = fn.mix_ratio_to_mole_frac(\
-      np.squeeze(data.variables["plt_ch_SO2_a"][:]), p, cm.M_SO2_H2O, T, rhod)
+      np.squeeze(data.variables["plt_ch_SO2_a"][:]) * cm.M_SO2_H2O, p, cm.M_SO2_H2O, T, rhod)
 
     ax = fig.add_subplot(132)
     ax.yaxis.set_major_formatter(plt.NullFormatter())
@@ -77,7 +77,7 @@ def plot_fig1(data, output_folder = '', output_title = ''):
     # calculate average pH
     # (weighted with volume of cloud droplets)
     r3     = data.variables["radii_m3"][:]
-    n_H    = data.variables["chem_H"][:] / cm.M_H
+    n_H    = data.variables["chem_H"][:]
     nom    = np.zeros(t.shape[0])
     den    = np.zeros(t.shape[0])
     for time in range(t.shape[0]): 
@@ -165,8 +165,8 @@ def plot_fig3(data, output_folder = '', output_title = ''):
 
     g = Gnuplot.Gnuplot()# persist=1)
 
-    s6_ini = data.variables['chemd_S_VI'][0,:]  * data.variables["rhod"][0]  / d_log_rd
-    s6_end = data.variables['chemd_S_VI'][-1,:] * data.variables["rhod"][-1] / d_log_rd
+    s6_ini = data.variables['chemd_S_VI'][0,:]  * cm.M_H2SO4 * data.variables["rhod"][0]  / d_log_rd
+    s6_end = data.variables['chemd_S_VI'][-1,:] * cm.M_H2SO4 * data.variables["rhod"][-1] / d_log_rd
 
     plot_ini = Gnuplot.PlotItems.Data(rd * 2 * 1e6, s6_ini * 1e9, with_="steps lw 3 lt 1", title="ini")
     plot_end = Gnuplot.PlotItems.Data(rd * 2 * 1e6, s6_end * 1e9, with_="steps lw 3 lt 2", title="end")

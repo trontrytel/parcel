@@ -27,7 +27,7 @@ def plot_henry(data, output_folder):
     T    = data.variables["T"][:]
     p    = data.variables["p"][:]
     rhod = data.variables["rhod"][:]
-    conc_H = np.squeeze(data.variables["chem_H"][:]) / cm.M_H / vol
+    conc_H = np.squeeze(data.variables["chem_H"][:]) / vol
 
     plt.figure(1, figsize=(18,14))
     plots    = []
@@ -35,7 +35,7 @@ def plot_henry(data, output_folder):
 
     for i in range(6):
         plots.append(plt.subplot(2,3,i+1))
-        lab = chem[i] + " in droplets [kg/kg dry air]"
+        lab = chem[i] + " in droplets [moles/kg dry air]"
         plots[i].set_xlabel(lab)
 
     for ax in plots:

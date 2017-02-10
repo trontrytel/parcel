@@ -84,18 +84,18 @@ def test_henry_checker(data, chem, eps = {"SO2": 5e-8, "O3":4e-8, "H2O2": 2e-6, 
 
     """
     vol    = data.variables["radii_m3"][-1] * 4/3. * math.pi
-    conc_H = data.variables["chem_H"][-1, 0] / cm.M_H / vol
+    conc_H = data.variables["chem_H"][-1, 0] / vol
     T      = data.variables["T"][-1]
     p      = data.variables["p"][-1]
     mixr_g = data.variables[chem+"_g"][-1]
     rhod   = data.variables["rhod"][-1]
 
-    # dissolved mass according to Henry's law
+    # dissolved moles according to Henry's law
     henry_aq  = fn.henry_teor(chem, p, T, vol, mixr_g, rhod, conc_H)
-    # mass in droplets
+    # moles in droplets
     chem_tmp  = data.variables["chem_"+chem+"_a"][-1]
 
-    assert np.isclose(chem_tmp, henry_aq, atol=0, rtol=eps[chem]), chem + " : " + str((chem_tmp - henry_aq)/chem_tmp) 
+    assert np.isclose(chem_tmp, henry_aq, atol=0, rtol=eps[chem]), chem + "relative error: " + str((chem_tmp - henry_aq)/chem_tmp) 
 
 def test_henry_plot(data):
     """

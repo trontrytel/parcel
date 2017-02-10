@@ -181,7 +181,7 @@ def _output_init(micro, opts, spectra):
     for vm in dct["moms"]:
       if (vm in _Chem_a_id):
       	fout.createVariable(name+'_'+vm, 'd', ('t',name))
-      	fout.variables[name+'_'+vm].unit = 'kg of chem species dissolved in cloud droplets (kg of dry air)^-1'
+      	fout.variables[name+'_'+vm].unit = 'moles of chem species dissolved in cloud droplets (kg of dry air)^-1'
       else:
         assert(type(vm)==int)
 	fout.createVariable(name+'_m'+str(vm), 'd', ('t',name))
@@ -194,7 +194,7 @@ def _output_init(micro, opts, spectra):
   if micro.opts_init.chem_switch:
     for id_str in _Chem_g_id.iterkeys():
       units[id_str] = "gas mixing ratio [kg / kg dry air]"
-      units[id_str.replace('_g', '_a')] = "kg of chem species (both undissociated and ions) dissolved in cloud droplets (kg of dry air)^-1"
+      units[id_str.replace('_g', '_a')] = "moles of chem species (both undissociated and ions) dissolved in cloud droplets (moles per kg of dry air)"
 
   for var_name, unit in units.iteritems():
     fout.createVariable(var_name, 'd', ('t',))
@@ -262,7 +262,7 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300., r_0=.022,
                                   It can also define spectrum diagnostics for chemical compounds, e.g.:
 
                                   {"chem" : {"rght": 1e-6, "left": 1e-10, "drwt": "dry", "lnli": "log", "nbin": 100, "moms": ["S_VI", "NH4_a"]}}
-                                  will output the total mass of H2SO4  and NH4 ions in each sizedistribution bin
+                                  will output the total number of moles of H2SO4  and NH4 ions in each sizedistribution bin
                                   
                                   Valid "moms" for chemistry are: 
                                     "O3_a",  "H2O2_a", "H", 

@@ -36,16 +36,10 @@ def rho_calc(T, p, rv):
 
 def henry_teor(chem, p, T, vol, mixr_g, rhod, conc_H):
     """ 
-    calculate theoretical mass of chemical species dissolved into cloud droplets - Henry law 
+    calculate theoretical number of moles of chemical species dissolved into cloud droplets - Henry law 
     (per kg of dry air)
     """
-    # read in the molar mass of chemical species dissolved in water ...
-    if chem in ["SO2", "CO2", "NH3"]:
-        M_aq = getattr(cm, "M_"+chem+"_H2O")
-    else:
-        M_aq = getattr(cm, "M_"+chem)
-
-    # ... and the molar mass of chem species in gas phase
+    # read the molar mass of chem species in gas phase
     M_g = getattr(cm, "M_"+chem)
 
     # calculate the correction due to dissociation
@@ -75,7 +69,7 @@ def henry_teor(chem, p, T, vol, mixr_g, rhod, conc_H):
 
     # dissolved  = partial prsessure * Henry_const * molar mass * drop volume
     partial_prs = mix_ratio_to_mole_frac(mixr_g, p, M_g, T, rhod) * p
-    return partial_prs * henry_T * M_aq * vol
+    return partial_prs * henry_T * vol
 
 def dissoc_teor(chem, T):
     """ 
@@ -102,81 +96,79 @@ def diag_n_OH(V, conc_H):
     """
     return cm.K_H2O * V / conc_H
 
-def diag_n_NH3_H2O(m_N3, T, conc_H):
+def diag_n_NH3_H2O(n_N3, T, conc_H):
     """
     calculate the number of NH3*H2O moles
     """
-    return m_N3 / cm.M_NH3_H2O / (1. + dissoc_teor("NH3", T) * conc_H / cm.K_H2O)
+    return n_N3 / (1. + dissoc_teor("NH3", T) * conc_H / cm.K_H2O)
 
-def diag_n_NH4(m_N3, T, conc_H):
+def diag_n_NH4(n_N3, T, conc_H):
     """
     calculate the number of NH4+ moles
     """
-    return m_N3 / cm.M_NH3_H2O * conc_H * dissoc_teor("NH3", T) / cm.K_H2O / (1. + dissoc_teor("NH3", T) * conc_H / cm.K_H2O)
+    return n_N3 * conc_H * dissoc_teor("NH3", T) / cm.K_H2O / (1. + dissoc_teor("NH3", T) * conc_H / cm.K_H2O)
 
-def diag_n_HNO3(m_N5, T, conc_H):
+def diag_n_HNO3(n_N5, T, conc_H):
     """
     calculate the number of HNO3 moles
     """
-    return m_N5 / cm.M_HNO3 / (dissoc_teor("HNO3", T) / conc_H + 1)
+    return n_N5 / (dissoc_teor("HNO3", T) / conc_H + 1)
    
-def diag_n_NO3(m_N5, T, conc_H):
+def diag_n_NO3(n_N5, T, conc_H):
     """
     calculate the number of NO3- moles
     """
-    return dissoc_teor("HNO3", T) / conc_H * m_N5 / cm.M_HNO3 / (dissoc_teor("HNO3", T) / conc_H + 1)
+    return dissoc_teor("HNO3", T) / conc_H * n_N5 / (dissoc_teor("HNO3", T) / conc_H + 1)
 
-def diag_n_CO2_H2O(m_C4, T, conc_H):
+def diag_n_CO2_H2O(n_C4, T, conc_H):
     """
     calculate the number of CO2*H2O moles
     """
-    return m_C4 / cm.M_CO2_H2O \
-           / (1 + dissoc_teor("CO2", T) / conc_H + dissoc_teor("CO2", T) * dissoc_teor("HCO3", T) / conc_H / conc_H)
+    return n_C4 / (1 + dissoc_teor("CO2", T) / conc_H + dissoc_teor("CO2", T) * dissoc_teor("HCO3", T) / conc_H / conc_H)
 
-def diag_n_HCO3(m_C4, T, conc_H):
+def diag_n_HCO3(n_C4, T, conc_H):
     """
     calculate the number of HCO3- moles
     """
-    return m_C4 / cm.M_CO2_H2O * dissoc_teor("CO2", T) / conc_H \
+    return n_C4 * dissoc_teor("CO2", T) / conc_H \
            / (1 + dissoc_teor("CO2", T) / conc_H + dissoc_teor("CO2", T) * dissoc_teor("HCO3", T) / conc_H / conc_H)
 
-def diag_n_CO3(m_C4, T, conc_H):
+def diag_n_CO3(n_C4, T, conc_H):
     """
     calculate the number of CO3-- moles
     """
-    return m_C4 / cm.M_CO2_H2O * dissoc_teor("CO2", T) * dissoc_teor("HCO3", T) / conc_H / conc_H \
+    return n_C4 * dissoc_teor("CO2", T) * dissoc_teor("HCO3", T) / conc_H / conc_H \
            / (1 + dissoc_teor("CO2", T) / conc_H + dissoc_teor("CO2", T) * dissoc_teor("HCO3", T) / conc_H / conc_H)
 
-def diag_n_SO2_H2O(m_S4, T, conc_H):
+def diag_n_SO2_H2O(n_S4, T, conc_H):
     """
     calculate the number of SO2*H2O moles
     """
-    return m_S4 / cm.M_SO2_H2O \
-           / (1 + dissoc_teor("SO2", T) / conc_H + dissoc_teor("SO2", T) * dissoc_teor("HSO3", T) / conc_H / conc_H)
+    return n_S4 / (1 + dissoc_teor("SO2", T) / conc_H + dissoc_teor("SO2", T) * dissoc_teor("HSO3", T) / conc_H / conc_H)
 
-def diag_n_HSO3(m_S4, T, conc_H):
+def diag_n_HSO3(n_S4, T, conc_H):
     """
     calculate the number of HSO3- moles
     """
-    return m_S4 / cm.M_SO2_H2O * dissoc_teor("SO2", T) / conc_H \
+    return n_S4 * dissoc_teor("SO2", T) / conc_H \
            / (1 + dissoc_teor("SO2", T) / conc_H + dissoc_teor("SO2", T) * dissoc_teor("HSO3", T) / conc_H / conc_H)
 
 
-def diag_n_SO3(m_S4, T, conc_H):
+def diag_n_SO3(n_S4, T, conc_H):
     """
     calculate the number of SO3-- moles
     """
-    return m_S4 / cm.M_SO2_H2O * dissoc_teor("SO2", T) * dissoc_teor("HSO3", T) / conc_H / conc_H \
+    return n_S4 * dissoc_teor("SO2", T) * dissoc_teor("HSO3", T) / conc_H / conc_H \
            / (1 + dissoc_teor("SO2", T) / conc_H + dissoc_teor("SO2", T) * dissoc_teor("HSO3", T) / conc_H / conc_H)
 
-def diag_n_HSO4(m_S6, T, conc_H):
+def diag_n_HSO4(n_S6, T, conc_H):
     """
     calculate the number of HSO4- moles
     """
-    return m_S6 / cm.M_H2SO4 * conc_H / (conc_H + dissoc_teor("HSO4", T))
+    return n_S6 * conc_H / (conc_H + dissoc_teor("HSO4", T))
 
-def diag_n_SO4(m_S6, T, conc_H):
+def diag_n_SO4(n_S6, T, conc_H):
     """
     calculate the number of SO4-- moles
     """
-    return m_S6 / cm.M_H2SO4 * dissoc_teor("HSO4", T) / (conc_H + dissoc_teor("HSO4", T))
+    return n_S6 * dissoc_teor("HSO4", T) / (conc_H + dissoc_teor("HSO4", T))

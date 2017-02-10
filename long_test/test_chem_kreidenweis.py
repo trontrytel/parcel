@@ -103,7 +103,7 @@ def test_chem_sulfate_formation(data):
 
     # water weighted average pH at the end of the simulation
     r3     = data.variables["radii_m3"][-1,:]
-    n_H    = data.variables["chem_H"][-1,:] / cm.M_H
+    n_H    = data.variables["chem_H"][-1,:]
 
     nom = 0
 
@@ -118,8 +118,8 @@ def test_chem_sulfate_formation(data):
     print " "
     print "water weighted average pH = ", pH, " vs 4.82-4.85 from size resolved models "
 
-    s6_ini = data.variables["chemd_S_VI"][0, :]
-    s6_end = data.variables["chemd_S_VI"][-1, :]
+    s6_ini = data.variables["chemd_S_VI"][0, :] * cm.M_H2SO4
+    s6_end = data.variables["chemd_S_VI"][-1, :] * cm.M_H2SO4
 
     sulf_ppt = fn.mix_ratio_to_mole_frac((np.sum(s6_end) - np.sum(s6_ini)), p, cm.M_H2SO4, T, rhod) * 1e12
    
@@ -127,17 +127,17 @@ def test_chem_sulfate_formation(data):
     print "sulfate formation (ppt) = ", sulf_ppt, " vs 170-180 from size resolved models"
 
     ini_O3   = data.variables["O3_g"][0] / cm.M_O3 + \
-               data.variables["chemd_O3_a"][0, :].sum() / cm.M_O3
+               data.variables["chemd_O3_a"][0, :].sum()
 
     ini_H2O2 = data.variables["H2O2_g"][0] / cm.M_H2O2 + \
-               data.variables["chemd_H2O2_a"][0, :].sum() / cm.M_H2O2
+               data.variables["chemd_H2O2_a"][0, :].sum()
 
 
     end_O3   = data.variables["O3_g"][-1] / cm.M_O3 + \
-               data.variables["chemd_O3_a"][-1, :].sum() / cm.M_O3
+               data.variables["chemd_O3_a"][-1, :].sum()
 
     end_H2O2 = data.variables["H2O2_g"][-1] / cm.M_H2O2 + \
-               data.variables["chemd_H2O2_a"][-1, :].sum() / cm.M_H2O2
+               data.variables["chemd_H2O2_a"][-1, :].sum()
 
     sulf_ppt_H2O2 = fn.mix_ratio_to_mole_frac((np.sum(ini_H2O2) - np.sum(end_H2O2)) * cm.M_H2SO4, p, cm.M_H2SO4, T, rhod) * 1e12
     sulf_ppt_O3   = fn.mix_ratio_to_mole_frac((np.sum(ini_O3) - np.sum(end_O3)) * cm.M_H2SO4, p, cm.M_H2SO4, T, rhod) * 1e12
