@@ -234,7 +234,7 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300., r_0=.022,
   sstp_cond = 1,
   sstp_chem = 1,
   wait = 0,
-  stop_at_RHmax = True
+  stop_at_RHmax = 0 #TODO - how to pass True/False via matlab?
 ):
   """
   Args:
@@ -381,16 +381,28 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300., r_0=.022,
         rec = it/outfreq
         _output(fout, opts, micro, state, rec, spectra)
 
-      # stop the simulation at RH_max if requested
+      # stop the simulation at RH_max if requested 
+      # and save in ncdf attributes the needed variables
       if (opts["stop_at_RHmax"] and (state["RH"] < info["RH_max"])): 
         rec = 1
         _output(fout, opts, micro, state, rec, spectra)
 
-        # save the number of activated cloud droplets - TODO
+        # save rhod @ RHmax
+        info = { "rhod_RHmax" : state["rhod"]}
+        _save_attrs(fout, info)
+
+        # save z @ RHmax
+        info = { "z_RHmax" : state["z"]}
+        _save_attrs(fout, info)
+
+        # save RHmax
+        info = { "RHmax" : state["RH"]}
+        _save_attrs(fout, info)
+
+        # save the number of activated cloud droplets
         micro.diag_rw_ge_rc()
         micro.diag_wet_mom(0)
         N_act = np.frombuffer(micro.outbuf())[0]
-
         info = { "N_act_at_RH_max" : N_act}
 
         break
