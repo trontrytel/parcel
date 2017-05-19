@@ -9,10 +9,10 @@ tes_chem_mass_const,  test_chem_init_spectrum, test_sd_convergence
 
 """
 # initial conditions (from Kreidenweis et al 2003)
-RH_init = .95
-T_init  = 285.2
-p_init  = 95000.
-r_init  = fn.rh_to_rv(RH_init, T_init, p_init)
+#RH_init = .95
+T_init  = 289.    #285.2
+p_init  = 101500. #95000.
+r_init  = 7.5e-3  #fn.rh_to_rv(RH_init, T_init, p_init)
 
 # STP conditions (needed to initialize dry radii distribution)
 p_stp = 101325
@@ -28,16 +28,16 @@ rho_stp  = p_stp  / T_stp / cm.R_d
 
 # initial condition for trace geses
 SO2_g_init  = fn.mole_frac_to_mix_ratio(200e-12, p_init, cm.M_SO2,  T_init, rhod_init)
-O3_g_init   = fn.mole_frac_to_mix_ratio(50e-9,   p_init, cm.M_O3,   T_init, rhod_init)
-H2O2_g_init = fn.mole_frac_to_mix_ratio(500e-12, p_init, cm.M_H2O2, T_init, rhod_init)
+O3_g_init   = fn.mole_frac_to_mix_ratio(25e-9,   p_init, cm.M_O3,   T_init, rhod_init)
+H2O2_g_init = fn.mole_frac_to_mix_ratio(400e-12, p_init, cm.M_H2O2, T_init, rhod_init)
 CO2_g_init  = fn.mole_frac_to_mix_ratio(360e-6,  p_init, cm.M_CO2,  T_init, rhod_init)
 NH3_g_init  = fn.mole_frac_to_mix_ratio(100e-12, p_init, cm.M_NH3,  T_init, rhod_init)
 HNO3_g_init = fn.mole_frac_to_mix_ratio(100e-12, p_init, cm.M_HNO3, T_init, rhod_init)
 
 # aerosol size distribution
-mean_r = .04e-6
-gstdev = 2.
-n_tot  = 566.e6 * rho_stp / rho_init
+mean_r = .05e-6
+gstdev = 1.8
+n_tot  = 50.e6 * rho_stp / rho_init
 kappa  = 0.61
 
 # chem process toggling
@@ -47,7 +47,7 @@ chem_rct = False
 chem_rho = 1.8e3
 
 # output
-z_max   = 1300
+z_max   = 1500 #1300
 dt      = .1
 w       = .5
 outfreq = int(z_max / dt / 30) 
@@ -61,6 +61,7 @@ sstp_chem = 1
 # output moments for the chemistry quicklook plot (the same for all tests)
 out_bin = '{"plt_rw":   {"rght": 1,    "left":    0, "drwt": "wet", "lnli": "lin", "nbin": 1, "moms": [0, 1, 3]},\
             "plt_rd":   {"rght": 1,    "left":    0, "drwt": "dry", "lnli": "lin", "nbin": 1, "moms": [0, 1, 3]},\
+            "re_NH3":   {"rght": 0.5e-6,  "left":  0.02e-6, "drwt": "dry", "lnli": "lin", "nbin": 2, "moms": ["NH3_a", 0]},\
             "plt_ch":   {"rght": 1,    "left":    0, "drwt": "dry", "lnli": "lin", "nbin": 1,\
                          "moms": ["O3_a", "H2O2_a", "H", "SO2_a", "S_VI",\
                                  "CO2_a", "NH3_a", "HNO3_a"]}}'

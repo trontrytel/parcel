@@ -14,6 +14,7 @@ import pprint as pp
 from parcel import parcel
 from libcloudphxx import common as cm
 from chemical_plot import plot_chem
+from review_plot import plot_review
 from kreidenweis import plot_fig1
 from kreidenweis import plot_fig2
 from kreidenweis import plot_fig3
@@ -34,7 +35,7 @@ def data(request):
 
     p_dict['chem_dsl'] = True
     p_dict['chem_dsc'] = True
-    p_dict['chem_rct'] = True
+    p_dict['chem_rct'] = False
 
     p_dict['sd_conc']  = 1024
     p_dict['outfreq']  = 10 / (p_dict['dt'] * p_dict['w'])
@@ -49,7 +50,7 @@ def data(request):
     pp.pprint(p_dict)
 
     # run parcel
-    parcel(**p_dict)
+    #parcel(**p_dict)
 
     #simulation results
     data = netcdf.netcdf_file(p_dict['outfile'],   "r")
@@ -58,7 +59,7 @@ def data(request):
     def removing_files():
         subprocess.call(["rm", p_dict['outfile']])
 
-    request.addfinalizer(removing_files)
+    #request.addfinalizer(removing_files)
     return data
 
 def test_chem_plot(data):
@@ -66,6 +67,12 @@ def test_chem_plot(data):
     quicklook for chemistry
     """
     plot_chem(data, output_folder="plots/outputs", output_title='/test_chem_kreidenwies_')
+
+def test_chem_review(data):
+    """
+    quicklook for review
+    """
+    plot_review(data, output_folder="plots/outputs", output_title='/test_chem_review_')
 
 def test_thesis_profiles(data):
     """

@@ -133,13 +133,18 @@ def plot_chem(data, output_folder = '', output_title = ''):
       ax.set_ylabel('t [s]')
 
     t   = data.variables["t"][spn_idx:]
-    n_H = np.squeeze(data.variables["plt_ch_H"][spn_idx:]) / cm.M_H
     vol = np.squeeze(data.variables["plt_rw_m3"][spn_idx:]) * 4/3. * math.pi
+
+    vol_litres = vol / 1e3
+
+    n_H = np.squeeze(data.variables["plt_ch_H"][spn_idx:]) / cm.M_H
+    n_OH = cm.K_H2O / n_H * vol_litres * vol_litres
+
     pH  = -1 * np.log10(n_H / vol / 1e3)
                                     # litres
-    plots[0].plot(pH,                                                        t, style)
-    plots[1].plot(np.squeeze(data.variables["plt_ch_H"][spn_idx:])  / cm.M_H  , t, style)
-    plots[2].plot(cm.K_H2O / np.squeeze(data.variables["plt_ch_H"][spn_idx:]) * vol , t, style)
+    plots[0].plot(pH,   t, style)
+    plots[1].plot(n_H,  t, style)
+    plots[2].plot(n_OH, t, style)
 
     plt.tight_layout()
     plt.savefig(output_folder + output_title + "pH.pdf")
