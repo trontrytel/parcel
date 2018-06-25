@@ -2,8 +2,8 @@
 
 # TEMP TODO TEMP TODO !!!
 import sys
-#sys.path.insert(0, "../libcloudphxx/build/bindings/python/")
-#sys.path.insert(0, "../../../libcloudphxx/build/bindings/python/")
+sys.path.insert(0, "../libcloudphxx/build/bindings/python/")
+sys.path.insert(0, "../../../libcloudphxx/build/bindings/python/")
 #sys.path.insert(0, "/usr/local/lib/site-python/")
 # TEMP TODO TEMP TODO !!!
 
@@ -25,8 +25,8 @@ parcel_version = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip()
 
 # id_str     id_int (gas phase chemistry labels)
 _Chem_g_id = {
-  "SO2_g"  : lgrngn.chem_species_t.SO2, 
-  "H2O2_g" : lgrngn.chem_species_t.H2O2, 
+  "SO2_g"  : lgrngn.chem_species_t.SO2,
+  "H2O2_g" : lgrngn.chem_species_t.H2O2,
   "O3_g"   : lgrngn.chem_species_t.O3,
   "HNO3_g" : lgrngn.chem_species_t.HNO3,
   "NH3_g"  : lgrngn.chem_species_t.NH3,
@@ -35,14 +35,38 @@ _Chem_g_id = {
 
 # id_str     id_int (aqueous phase chemistry labels)
 _Chem_a_id = {
-  "SO2_a"  : lgrngn.chem_species_t.SO2, 
-  "H2O2_a" : lgrngn.chem_species_t.H2O2, 
+  "SO2_a"  : lgrngn.chem_species_t.SO2,
+  "H2O2_a" : lgrngn.chem_species_t.H2O2,
   "O3_a"   : lgrngn.chem_species_t.O3,
-  "CO2_a"  : lgrngn.chem_species_t.CO2, 
-  "HNO3_a" : lgrngn.chem_species_t.HNO3, 
+  "CO2_a"  : lgrngn.chem_species_t.CO2,
+  "HNO3_a" : lgrngn.chem_species_t.HNO3,
   "NH3_a"  : lgrngn.chem_species_t.NH3,
   "H"      : lgrngn.chem_species_t.H,
   "S_VI"   : lgrngn.chem_species_t.S_VI
+}
+
+# label                         kernel choice
+_coal_kernel_id = {
+ "geometric"                  : lgrngn.kernel_t.geometric,
+ "golovin"                    : lgrngn.kernel_t.golovin,
+ "hall"                       : lgrngn.kernel_t.hall,
+ "hall_davis_no_waals"        : lgrngn.kernel_t.hall_davis_no_waals,
+ "long"                       : lgrngn.kernel_t.long,
+ "onishi_hall"                : lgrngn.kernel_t.onishi_hall,
+ "onishi_hall_davis_no_waals" : lgrngn.kernel_t.onishi_hall_davis_no_waals,
+ "hall_pinsky_1000mb_grav"    : lgrngn.kernel_t.hall_pinsky_1000mb_grav,
+ "hall_pinsky_cumulonimbus"   : lgrngn.kernel_t.hall_pinsky_cumulonimbus,
+ "hall_pinsky_stratocumulus"  : lgrngn.kernel_t.hall_pinsky_stratocumulus,
+ "vohl_davis_no_waals"        : lgrngn.kernel_t.vohl_davis_no_waals
+}
+
+# label                         terminal velocity choice
+_terminal_vel_id = {
+  "beard76"                    : lgrngn.vt_t.beard76,
+  "beard77"                    : lgrngn.vt_t.beard77,
+  "beard77fast"                : lgrngn.vt_t.beard77fast,
+  "khvorostyanov_spherical"    : lgrngn.vt_t.khvorostyanov_spherical,
+  "khvorostyanov_nonspherical" : lgrngn.vt_t.khvorostyanov_nonspherical
 }
 
 class lognormal(object):
@@ -87,13 +111,17 @@ def _micro_init(aerosol, opts, state, info):
   # switch off sedimentation and collisions
   opts_init.sedi_switch = False
   opts_init.coal_switch = False
-  
+  if opts['coal']:
+    opts_init.coal_switch = True
+    opts_init.terminal_velocity = _terminal_vel_id[opts["terminal_vel"]] 
+    opts_init.kernel = _coal_kernel_id[opts["coal_kernel"]]
+
   # switching on chemistry if either dissolving, dissociation or reactions are chosen
   opts_init.chem_switch = False
   if opts["chem_dsl"] or opts["chem_dsc"] or opts["chem_rct"]: 
     opts_init.chem_switch = True
     opts_init.sstp_chem = opts["sstp_chem"]
- 
+
   # initialisation
   micro = lgrngn.factory(lgrngn.backend_t.serial, opts_init)
   ambient_chem = {}
@@ -111,6 +139,8 @@ def _micro_step(micro, state, info, opts, it, fout):
   libopts = lgrngn.opts_t()
   libopts.cond = True
   libopts.coal = False
+  if micro.opts_init.coal_switch:
+    libopts.coal = True
   libopts.adve = False
   libopts.sedi = False
 
@@ -260,7 +290,8 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
   chem_rho = 1.8e3,
   sstp_cond = 1,
   sstp_chem = 1,
-  wait = 0
+  wait = 0,
+  coal = False, coal_kernel = "hall", terminal_vel = "beard77fast"
 ):
   """
   Args:
@@ -319,6 +350,17 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
                                   valid options are: pprof_const_th_rv, pprof_const_rhod, pprof_piecewise_const_rhod
     wait (Optional[float]):       number of timesteps to run parcel model with vertical velocity=0 at the end of simulation
                                   (added for testing)
+    coal  (Optional[bool]):       switch on collisions between super-droplets
+    coal_kernel (Optional[str]):  collision kernel choice (one of "geometric", "golovin", "hall",
+                                    "hall_davis_no_waals", "long", "onishi_hall", "onishi_hall_davis_no_waals",
+                                    "hall_pinsky_1000mb_grav", "hall_pinsky_cumulonimbus",
+                                    "hall_pinsky_stratocumulus", "vohl_davis_no_waals")
+
+    terminal_vel (Optional[str]): terminal velocity calculation choice (one of  "beard76", "beard77", "beard77fast", 
+                                    "khvorostyanov_spherical", "khvorostyanov_nonspherical")
+}
+
+
    """
   # packing function arguments into "opts" dictionary
   args, _, _, _ = inspect.getargvalues(inspect.currentframe())
@@ -430,8 +472,17 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
     _save_attrs(fout, opts)
 
     if wait != 0:
+      tmp_rv = state["r_v"][0]
+      tmp_th = state["th_d"][0]
+      tmp_rhod = state["rhod"][0]
+      tmp_p = state["p"]
       for it in range (nt+1, nt+wait):
         state["t"] = it * dt
+        state["r_v"][0] = tmp_rv
+        state["th_d"][0] = tmp_th
+        state["rhod"][0] = tmp_rhod
+        state["p"] = tmp_p
+
         _micro_step(micro, state, info, opts, it, fout)
 
         if (it % outfreq == 0): 
