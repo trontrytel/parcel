@@ -91,7 +91,7 @@ class sum_of_lognormals(object):
       res += lognormal(lnr)
     return res
 
-def _micro_init(aerosol, opts, state, info):
+def _micro_init(aerosol, gccn, opts, state, info):
 
   # lagrangian scheme options
   opts_init = lgrngn.opts_init_t()  
@@ -99,20 +99,36 @@ def _micro_init(aerosol, opts, state, info):
     setattr(opts_init, opt, opts[opt])
   opts_init.n_sd_max    = opts_init.sd_conc
 
+  # read in the initial aerosol size distribution
   dry_distros = {}
   for name, dct in aerosol.iteritems(): # loop over kappas
     lognormals = []
     for i in range(len(dct["mean_r"])):
       lognormals.append(lognormal(dct["mean_r"][i], dct["gstdev"][i], dct["n_tot"][i]))
     dry_distros[dct["kappa"]] = sum_of_lognormals(lognormals)
-
   opts_init.dry_distros = dry_distros
 
-  # switch off sedimentation and collisions
+  # read in the initial giant aerosol sizes
+  if opts["gccn_flag"]:
+      opts_init.sd_const_multi_dry_sizes = opts["sd_const_multi_dry_sizes"]
+      opts_init.n_sd_max = int(1e6)  # some more space for the tail SDs
+      dry_sizes = {}
+      dry_sizes[gccn["kappa"]] = {}
+      for it in range(len(gccn["r_d"])):
+          dry_sizes[gccn["kappa"]][gccn["r_d"][it]] = gccn["n_tot"][it]
+      opts_init.dry_sizes = dry_sizes
+
+  # use better resolution for the SD tail
+  if opts["large_tail"]:
+      opts_init.sd_conc_large_tail = 1
+      opts_init.n_sd_max = int(1e6)  # some more space for the tail SDs
+
+  # switch on/off sedimentation and collisions
   opts_init.sedi_switch = False
   opts_init.coal_switch = False
   if opts['coal']:
     opts_init.coal_switch = True
+
     opts_init.terminal_velocity = _terminal_vel_id[opts["terminal_vel"]]
     opts_init.kernel = _coal_kernel_id[opts["coal_kernel"]]
     if "onishi" in opts["coal_kernel"]:
@@ -293,7 +309,13 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
   sstp_cond = 1,
   sstp_chem = 1,
   wait = 0,
-  coal = False, coal_kernel = "hall", terminal_vel = "beard77fast", coal_dissipation_rate = 0.04, coal_Reynolds_number = 100,
+  coal = False,
+  coal_kernel = "hall", terminal_vel = "beard77fast",
+  coal_dissipation_rate = 0.04, coal_Reynolds_number = 100,
+  gccn_flag = False,
+  gccn = '{}',
+  sd_const_multi_dry_sizes = 2,
+  large_tail = False
 ):
   """
   Args:
@@ -306,18 +328,33 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
     RH_0    (Optional[float]):    initial relative humidity
     outfile (Optional[string]):   output netCDF file name
     outfreq (Optional[int]):      output interval (in number of time steps)
+    pprof   (Optional[string]):   method to calculate pressure profile used to calculate
+                                  dry air density that is used by the super-droplet scheme
+                                  valid options are: pprof_const_th_rv, pprof_const_rhod, pprof_piecewise_const_rhod
+    wait (Optional[float]):       number of timesteps to run parcel model with vertical velocity=0 at the end of simulation
+                                  (added for testing)
     sd_conc (Optional[int]):      number of moving bins (super-droplets)
+
     aerosol (Optional[json str]): dict of dicts defining aerosol distribution, e.g.:
-                                  
+
                                   {"ammonium_sulfate": {"kappa": 0.61, "mean_r": [0.02e-6, 0.07e-7], "gstdev": [1.4, 1.2], "n_tot": [120.0e6, 80.0e6]}
-                                   "gccn" : {"kappa": 1.28, "mean_r": [2e-6], "gstdev": [1.6], "n_tot": [1e2]}}
-              
+                                   "gccn_mode"       : {"kappa": 1.28, "mean_r": [2e-6],             "gstdev": [1.6],      "n_tot": [1e2]}}
+
                                   where kappa  - hygroscopicity parameter (see doi:10.5194/acp-7-1961-2007)
                                         mean_r - lognormal distribution mean radius [m]                    (list if multimodal distribution)
                                         gstdev - lognormal distribution geometric standard deviation       (list if multimodal distribution)
-                                        n_tot  - lognormal distribution total concentration under standard 
+                                        n_tot  - lognormal distribution total concentration under standard
                                                  conditions (T=20C, p=1013.25 hPa, rv=0) [m^-3]            (list if multimodal distribution)
 
+    gccn_flag  (Optional[bool]) :  when set to True adds aditional giant aerosols to initial size distribution.
+                                  The giant aerosol sizes are specified by gccn dictionary
+    gccn  (Optional[json str])  : dictionary with giant initial aerosol sizes, e.g.:
+
+                                  {"kappa" : 1.28, "r_d" : [10e-7, 80e-7], "n_tot" : [10, 5]}
+                                  will add two additional aerosol bins. One of dry radii 1 micron and concentration 10 per m3 and
+                                  other of dry radii 8 micron and concentration 5 per m3.
+    sd_const_multi_dry_sizes (Optional[int]):  multiplicity (i.e. weighting factor)of the additional super-droplets for gccn
+    large_tail (Optional[bool]) : use more SD to better represent the large tail of the initial aerosol distribution 
 
     out_bin (Optional[json str]): dict of dicts defining spectrum diagnostics, e.g.:
 
@@ -326,16 +363,16 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
                                   will generate five output spectra:
                                   - 0-th spectrum moment for 26 bins spaced logarithmically between 0 and 1e-4 m for dry radius
                                   - 0,1,2 & 3-rd moments for 49 bins spaced linearly between .5e-6 and 25e-6 for wet radius
-                                  
+
                                   It can also define spectrum diagnostics for chemical compounds, e.g.:
 
                                   {"chem" : {"rght": 1e-6, "left": 1e-10, "drwt": "dry", "lnli": "log", "nbin": 100, "moms": ["S_VI", "NH4_a"]}}
                                   will output the total mass of H2SO4  and NH4 ions in each sizedistribution bin
-                                  
-                                  Valid "moms" for chemistry are: 
-                                    "O3_a",  "H2O2_a", "H", 
+
+                                  Valid "moms" for chemistry are:
+                                    "O3_a",  "H2O2_a", "H",
                                     "SO2_a",  "S_VI",
-                                    "CO2_a",  
+                                    "CO2_a",
                                     "NH3_a", "HNO3_a",
 
     SO2_g    (Optional[float]):   initial SO2  gas mixing ratio [kg / kg dry air]
@@ -347,19 +384,18 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
     chem_dsl (Optional[bool]):    on/off for dissolving chem species into droplets
     chem_dsc (Optional[bool]):    on/off for dissociation of chem species in droplets
     chem_rct (Optional[bool]):    on/off for oxidation of S_IV to S_VI
-    pprof   (Optional[string]):   method to calculate pressure profile used to calculate 
-                                  dry air density that is used by the super-droplet scheme
-                                  valid options are: pprof_const_th_rv, pprof_const_rhod, pprof_piecewise_const_rhod
-    wait (Optional[float]):       number of timesteps to run parcel model with vertical velocity=0 at the end of simulation
-                                  (added for testing)
+
     coal  (Optional[bool]):       switch on collisions between super-droplets
     coal_kernel (Optional[str]):  collision kernel choice (one of "geometric", "golovin", "hall",
                                     "hall_davis_no_waals", "long", "onishi_hall", "onishi_hall_davis_no_waals",
                                     "hall_pinsky_1000mb_grav", "hall_pinsky_cumulonimbus",
                                     "hall_pinsky_stratocumulus", "vohl_davis_no_waals")
 
-    terminal_vel (Optional[str]): terminal velocity calculation choice (one of  "beard76", "beard77", "beard77fast", 
+    terminal_vel (Optional[str]): terminal velocity calculation choice (one of  "beard76", "beard77", "beard77fast",
                                     "khvorostyanov_spherical", "khvorostyanov_nonspherical")
+
+
+
 }
 
 
@@ -373,6 +409,9 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
 
   # parsing json specification of init aerosol spectra
   aerosol = json.loads(opts["aerosol"])
+
+  # parsing json specifications of initial giant aerosol sizes
+  gccn = json.loads(opts["gccn"])
 
   # default water content
   if ((opts["r_0"] < 0) and (opts["RH_0"] < 0)): 
@@ -402,7 +441,7 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
   info = { "RH_max" : 0, "libcloud_Git_revision" : libcloud_version, 
            "parcel_Git_revision" : parcel_version }
 
-  micro = _micro_init(aerosol, opts, state, info)
+  micro = _micro_init(aerosol, gccn, opts, state, info)
 
   with _output_init(micro, opts, spectra) as fout:
     # adding chem state vars
@@ -531,6 +570,9 @@ def _arguments_checking(opts, spectra, aerosol):
     # necessary?
       if gstdev == 1.: 
         raise Exception("standard deviation should be != 1 to avoid monodisperse distribution for aerosol[" + name + "]")
+
+  #TODO - add similar checks for gccn dict 
+
 
   for name, dct in spectra.iteritems():
     # TODO: check if name is valid netCDF identifier 
