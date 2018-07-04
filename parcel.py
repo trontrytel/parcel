@@ -113,8 +113,10 @@ def _micro_init(aerosol, opts, state, info):
   opts_init.coal_switch = False
   if opts['coal']:
     opts_init.coal_switch = True
-    opts_init.terminal_velocity = _terminal_vel_id[opts["terminal_vel"]] 
+    opts_init.terminal_velocity = _terminal_vel_id[opts["terminal_vel"]]
     opts_init.kernel = _coal_kernel_id[opts["coal_kernel"]]
+    if "onishi" in opts["coal_kernel"]:
+        opts_init.kernel_parameters = np.array([opts["coal_dissipation_rate"], opts["coal_Reynolds_number"]])
 
   # switching on chemistry if either dissolving, dissociation or reactions are chosen
   opts_init.chem_switch = False
@@ -291,7 +293,7 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
   sstp_cond = 1,
   sstp_chem = 1,
   wait = 0,
-  coal = False, coal_kernel = "hall", terminal_vel = "beard77fast"
+  coal = False, coal_kernel = "hall", terminal_vel = "beard77fast", coal_dissipation_rate = 0.04, coal_Reynolds_number = 100,
 ):
   """
   Args:

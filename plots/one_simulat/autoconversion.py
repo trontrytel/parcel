@@ -15,7 +15,7 @@ from parcel import parcel
 
 def plot_spectrum(data, output_folder):
 
-    ymax = 1e9
+    ymax = 1e12
     ymin = 1
 
     rr = data.variables["rradii_r_wet"][:] * 1e6
