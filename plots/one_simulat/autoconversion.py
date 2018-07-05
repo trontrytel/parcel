@@ -8,6 +8,7 @@ from scipy.io import netcdf
 import numpy as np
 import pytest
 import subprocess
+import math
 
 #import matplotlib
 #matplotlib.use('Agg')
@@ -82,8 +83,8 @@ def plot_spectrum_m0(data, output_folder):
 
 def plot_spectrum_m3(data, output_folder):
 
-    #ymax = 1e12
-    #ymin = 1
+    ymax = 1e-0
+    ymin = 1e-6
 
     rr = data.variables["rradii_r_wet"][:] * 1e6
     cr = data.variables["cradii_r_wet"][:] * 1e6
@@ -93,6 +94,8 @@ def plot_spectrum_m3(data, output_folder):
     dcr = data.variables["cradii_dr_wet"][:] * 1e6
     dar = data.variables["aradii_dr_wet"][:] * 1e6
 
+    to_mass = 4./3 * math.pi * 1e3                 * 1e3
+    #                          ^density of water   ^ convert to g
     for t in range(data.variables['t'].shape[0]):
 
         plt.clf()
@@ -100,12 +103,12 @@ def plot_spectrum_m3(data, output_folder):
         ax.set_xscale("log")
         ax.set_yscale("log")
         ax.set_xlabel("particle radius [$\mu m$]")
-        ax.set_ylabel("TODO [$kg^{-1} \mu m^{-1}$]")
-        #ax.set_ylim(ymin, ymax)
+        ax.set_ylabel("mass [$g_{water} \; kg^{-1} \mu m^{-1}$]")
+        ax.set_ylim(ymin, ymax)
 
-        nr = data.variables['rradii_m3'][t,:] / drr
-        nc = data.variables['cradii_m3'][t,:] / dcr
-        na = data.variables['aradii_m3'][t,:] / dar
+        nr = data.variables['rradii_m3'][t,:] / drr * to_mass
+        nc = data.variables['cradii_m3'][t,:] / dcr * to_mass
+        na = data.variables['aradii_m3'][t,:] / dar * to_mass
 
         plt.step(rr, nr, color='magenta', label="rain",   lw = 2.5, rasterized=False)
         plt.step(cr, nc, color='blue',    label="cloud",  lw = 2.5, rasterized=False)
@@ -120,8 +123,10 @@ def plot_spectrum_m3(data, output_folder):
 
 def plot_spectrum_m6(data, output_folder):
 
-    #ymax = 1e12
-    #ymin = 1
+    ymax = 10
+    ymin = -200
+    xmin = 1e-3
+    xmax = 1e3
 
     rr = data.variables["rradii_r_wet"][:] * 1e6
     cr = data.variables["cradii_r_wet"][:] * 1e6
@@ -136,14 +141,15 @@ def plot_spectrum_m6(data, output_folder):
         plt.clf()
         f, ax = plt.subplots()
         ax.set_xscale("log")
-        ax.set_yscale("log")
+        #ax.set_yscale("log")
         ax.set_xlabel("particle radius [$\mu m$]")
         ax.set_ylabel("TODO [$kg^{-1} \mu m^{-1}$]")
-        #ax.set_ylim(ymin, ymax)
+        ax.set_ylim(ymin, ymax)
+        ax.set_xlim(xmin, xmax)
 
-        nr = data.variables['rradii_m6'][t,:] / drr
-        nc = data.variables['cradii_m6'][t,:] / dcr
-        na = data.variables['aradii_m6'][t,:] / dar
+        nr = 10 * np.log10(data.variables['rradii_m6'][t,:] / 1e-18) / drr
+        nc = 10 * np.log10(data.variables['cradii_m6'][t,:] / 1e-18) / dcr
+        na = 10 * np.log10(data.variables['aradii_m6'][t,:] / 1e-18) / dar
 
         plt.step(rr, nr, color='magenta', label="rain",   lw = 2.5, rasterized=False)
         plt.step(cr, nc, color='blue',    label="cloud",  lw = 2.5, rasterized=False)
