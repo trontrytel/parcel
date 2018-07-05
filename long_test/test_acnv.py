@@ -13,7 +13,7 @@ import pprint as pp
 
 from parcel import parcel
 from libcloudphxx import common as cm
-from autoconversion import plot_spectrum
+from autoconversion import plot_spectrum_m0
 
 import functions as fn
 
@@ -45,7 +45,7 @@ def data(request):
                                                  "n_tot":  [120.0e6,  80.0e6]}}'
 
     # additional giant aerosols
-    p_dict['gccn_flag'] = True
+    p_dict['gccn_flag'] = False
     p_dict['large_tail'] = True
     p_dict['gccn'] = '{"kappa" : 1.28, "r_d" : [10e-7, 80e-7], "n_tot" : [10, 5]}'
 
@@ -73,4 +73,4 @@ def test_acnv_plot(data):
     """
     quicklook for spectrum
     """
-    plot_spectrum(data, output_folder="plots/outputs/")
+    plot_spectrum_m0(data, output_folder="plots/outputs/")
