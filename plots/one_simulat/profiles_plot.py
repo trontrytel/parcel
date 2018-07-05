@@ -40,7 +40,8 @@ def plot_profiles(fnc, output_folder="../outputs"):
     plots[4].plot(fnc.variables["r_v"][:] * 1000 , z)
     plots[5].plot(
         fnc.variables["RH"][:]                     , z, 
-        [fnc.variables["RH"][:].max()] * z.shape[0], z
+        [fnc.variables["RH"][:].max()] * z.shape[0], z,
+        [1.] * z.shape[0], z
         )
    
     if not os.path.exists(output_folder):
