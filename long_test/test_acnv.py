@@ -28,12 +28,12 @@ def data(request):
     p_dict['w']        = 1.
     p_dict['z_max']    = 1500.
     p_dict['RH_0']     = 0.9
-    p_dict['T_0']      = 300
+    p_dict['T_0']      = 10
     p_dict['p_0']      = 90000.
     p_dict['wait']     = 0
     p_dict['coal']     = True
-    p_dict['coal_kernel'] = "hall"
-    p_dict['terminal_vel'] = "khvorostyanov_nonspherical"
+    p_dict['coal_kernel'] = "geometric"
+    p_dict['terminal_vel'] = "khvorostyanov_spherical"
 
     p_dict['aerosol'] = '{"ammonium_sulfate": {"kappa": 0.61, "mean_r": [0.08e-6], "gstdev": [2.4], "n_tot": [500.0e6]}}'
     p_dict['out_bin'] = '{\
