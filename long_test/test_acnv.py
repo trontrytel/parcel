@@ -13,7 +13,7 @@ import pprint as pp
 
 from parcel import parcel
 from libcloudphxx import common as cm
-from autoconversion import plot_spectrum_m0
+from autoconversion import plot_spectrum_m0, plot_profiles
 
 import functions as fn
 
@@ -23,17 +23,17 @@ def data(request):
     p_dict = {}
     p_dict['outfile']  = "test_acnv.nc"
     p_dict['sd_conc']  = 1000
-    p_dict['outfreq']  = 300
+    p_dict['outfreq']  = 100
     p_dict['dt']       = 1.
     p_dict['w']        = 0.5
     p_dict['z_max']    = 1500.
-    p_dict['RH_0']     = 0.9
-    p_dict['T_0']      = 10
+    p_dict['RH_0']     = 0.999
+    p_dict['T_0']      = 273.15 + 5
     p_dict['p_0']      = 90000.
     p_dict['wait']     = 0
 
     p_dict['coal']     = True
-    p_dict['coal_kernel'] = "onishi_hall"
+    p_dict['coal_kernel'] = "hall_pinsky_cumulonimbus" #"onishi_hall"
     p_dict['terminal_vel'] = "khvorostyanov_spherical"
     p_dict['coal_dissipation_rate'] = 0.01  # or 0.04
     p_dict['coal_Reynolds_number'] = 100.
@@ -74,3 +74,4 @@ def test_acnv_plot(data):
     quicklook for spectrum
     """
     plot_spectrum_m0(data, output_folder="plots/outputs/")
+    plot_profiles(data, output_folder="plots/outputs/")

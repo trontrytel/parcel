@@ -37,15 +37,17 @@ def data(request):
     p_dict['coal_kernel'] = "hall_davis_no_waals"
     p_dict['terminal_vel'] = "khvorostyanov_spherical"
     p_dict['aerosol'] = '{"ammonium_sulfate": {"kappa": 0.61, "mean_r": [0.06e-6, 0.12e-6], "gstdev": [1.6, 2.5], "n_tot": [500.0e6, 320.0e6]}}'
-    #p_dict['out_bin'] = '{\
-    #                "rradii": {"rght": 1000e-6, "left": 25e-6,  "drwt": "wet", "lnli": "log", "nbin": 1, "moms": [6]},\
-    #                "cradii": {"rght": 25e-6,   "left": 1e-6,   "drwt": "wet", "lnli": "log", "nbin": 1, "moms": [6]},\
-    #                "aradii": {"rght": 1e-6,    "left": 1e-9,   "drwt": "wet", "lnli": "log", "nbin": 1, "moms": [6]}}'
 
     p_dict['out_bin'] = '{\
-                "rradii": {"rght": 1000e-6, "left": 25e-6,  "drwt": "wet", "lnli": "log", "nbin": 51, "moms": [0, 3, 6]},\
-                "cradii": {"rght": 25e-6,   "left": 1e-6,   "drwt": "wet", "lnli": "log", "nbin": 26, "moms": [0, 3, 6]},\
-                "aradii": {"rght": 1e-6,    "left": 1e-9,   "drwt": "wet", "lnli": "log", "nbin": 26, "moms": [0, 3, 6]}}'
+                    "rradii": {"rght": 1000e-6, "left": 25e-6,  "drwt": "wet", "lnli": "log", "nbin": 1, "moms": [3]},\
+                    "cradii": {"rght": 25e-6,   "left": 1e-6,   "drwt": "wet", "lnli": "log", "nbin": 1, "moms": [3]},\
+                    "aradii": {"rght": 1e-6,    "left": 1e-9,   "drwt": "wet", "lnli": "log", "nbin": 1, "moms": [3]}}'
+
+    #p_dict['out_bin'] = '{\
+    #            "rradii": {"rght": 1000e-6, "left": 25e-6,  "drwt": "wet", "lnli": "log", "nbin": 51, "moms": [0, 3, 6]},\
+    #            "cradii": {"rght": 25e-6,   "left": 1e-6,   "drwt": "wet", "lnli": "log", "nbin": 26, "moms": [0, 3, 6]},\
+    #            "aradii": {"rght": 1e-6,    "left": 1e-9,   "drwt": "wet", "lnli": "log", "nbin": 26, "moms": [0, 3, 6]}}'
+
     #open_nc(p_dict)
 
     # run parcel

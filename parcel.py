@@ -94,8 +94,8 @@ class sum_of_lognormals(object):
 def _micro_init(aerosol, gccn, opts, state, info):
 
   # lagrangian scheme options
-  opts_init = lgrngn.opts_init_t()  
-  for opt in ["dt", "sd_conc", "chem_rho", "sstp_cond"]:  
+  opts_init = lgrngn.opts_init_t()
+  for opt in ["dt", "sd_conc", "chem_rho", "sstp_cond"]:
     setattr(opts_init, opt, opts[opt])
   opts_init.n_sd_max    = opts_init.sd_conc
 
@@ -136,7 +136,7 @@ def _micro_init(aerosol, gccn, opts, state, info):
 
   # switching on chemistry if either dissolving, dissociation or reactions are chosen
   opts_init.chem_switch = False
-  if opts["chem_dsl"] or opts["chem_dsc"] or opts["chem_rct"]: 
+  if opts["chem_dsl"] or opts["chem_dsc"] or opts["chem_rct"]:
     opts_init.chem_switch = True
     opts_init.sstp_chem = opts["sstp_chem"]
 
@@ -153,7 +153,7 @@ def _micro_init(aerosol, gccn, opts, state, info):
 
   return micro
 
-def _micro_step(micro, state, info, opts, it, fout):
+def _micro_step(micro, state, info, opts, it, fout, dt):
   libopts = lgrngn.opts_t()
   libopts.cond = True
   libopts.coal = False
@@ -176,7 +176,28 @@ def _micro_step(micro, state, info, opts, it, fout):
 
   # call libcloudphxx microphysics
   micro.step_sync(libopts, state["th_d"], state["r_v"], state["rhod"], ambient_chem=ambient_chem)
+
+  # calculate autoconversion rate and cloud and rain water mixing ratios
+  micro.diag_wet_rng(25e-6, 1.)
+  micro.diag_wet_mom(3)
+  m3_rain_before_col = np.longdouble(np.frombuffer(micro.outbuf()))
+
   micro.step_async(libopts)
+
+  micro.diag_wet_rng(25e-6, 1.)
+  micro.diag_wet_mom(3)
+  m3_rain_after_col = np.longdouble(np.frombuffer(micro.outbuf()))
+
+  from math import pi
+  state["acnv"] = (m3_rain_after_col - m3_rain_before_col) / dt * 4/3. * pi * common.rho_w
+
+  micro.diag_wet_rng(1e-6, 25e-6)
+  micro.diag_wet_mom(3)
+  state["r_c"] = np.frombuffer(micro.outbuf()) * 4/3. * pi * common.rho_w
+
+  micro.diag_wet_rng(25e-6, 1.)
+  micro.diag_wet_mom(3)
+  state["r_r"] = np.frombuffer(micro.outbuf()) * 4/3. * pi * common.rho_w
 
   # update state after microphysics (needed for below update for chemistry)
   _stats(state, info)
@@ -188,7 +209,7 @@ def _micro_step(micro, state, info, opts, it, fout):
       # save changes due to chemistry
       micro.diag_chem(id_int)
       state[id_str.replace('_g', '_a')] = np.frombuffer(micro.outbuf())[0]
- 
+
 def _stats(state, info):
   state["T"] = np.array([common.T(state["th_d"][0], state["rhod"][0])])
   state["RH"] = state["p"] * state["r_v"] / (state["r_v"] + common.eps) / common.p_vs(state["T"][0])
@@ -197,7 +218,7 @@ def _stats(state, info):
 def _output_bins(fout, t, micro, opts, spectra):
   for dim, dct in spectra.iteritems():
     for bin in range(dct["nbin"]):
-      if dct["drwt"] == 'wet':    
+      if dct["drwt"] == 'wet':
 	micro.diag_wet_rng(
 	  fout.variables[dim+"_r_wet"][bin],
 	  fout.variables[dim+"_r_wet"][bin] + fout.variables[dim+"_dr_wet"][bin]
@@ -211,7 +232,7 @@ def _output_bins(fout, t, micro, opts, spectra):
 
       for vm in dct["moms"]:
         if type(vm) == int:
-          # calculating moments 
+          # calculating moments
           if dct["drwt"] == 'wet':
             micro.diag_wet_mom(vm)
           elif dct["drwt"] == 'dry':
@@ -228,7 +249,7 @@ def _output_init(micro, opts, spectra):
   fout = netcdf.netcdf_file(opts["outfile"], 'w')
   fout.createDimension('t', None)
   for name, dct in spectra.iteritems():
-    fout.createDimension(name, dct["nbin"]) 
+    fout.createDimension(name, dct["nbin"])
 
     tmp = name + '_r_' + dct["drwt"]
     fout.createVariable(tmp, 'd', (name,))
@@ -239,7 +260,7 @@ def _output_init(micro, opts, spectra):
     fout.createVariable(tmp, 'd', (name,))
     fout.variables[tmp].unit = "m"
     fout.variables[tmp].description = "bin width"
-    
+
     if dct["lnli"] == 'log':
       from math import exp, log
       dlnr = (log(dct["rght"]) - log(dct["left"])) / dct["nbin"]
@@ -260,9 +281,10 @@ def _output_init(micro, opts, spectra):
         assert(type(vm)==int)
 	fout.createVariable(name+'_m'+str(vm), 'd', ('t',name))
 	fout.variables[name+'_m'+str(vm)].unit = 'm^'+str(vm)+' (kg of dry air)^-1'
-  
-  units = {"z" : "m",  "t" : "s", "r_v" : "kg/kg", "th_d" : "K", "rhod" : "kg/m3", 
-           "p" : "Pa", "T" : "K", "RH"  : "1"
+
+  units = {"z"  : "m",     "t"   : "s",     "r_v"  : "kg/kg", "th_d" : "K", "rhod" : "kg/m3",
+           "p"  : "Pa",    "T"   : "K",     "RH"   : "1",
+           "r_c": "kg/kg", "r_r" : "kg/kg", "acnv" : "m3/s"
   }
 
   if micro.opts_init.chem_switch:
@@ -273,7 +295,7 @@ def _output_init(micro, opts, spectra):
   for var_name, unit in units.iteritems():
     fout.createVariable(var_name, 'd', ('t',))
     fout.variables[var_name].unit = unit
-  
+
   return fout
 
 def _output_save(fout, state, rec):
@@ -295,16 +317,16 @@ def _p_hydro_const_rho(dz, p, rho):
 def _p_hydro_const_th_rv(z_lev, p_0, th_std, r_v, z_0=0.):
   # hydrostatic pressure assuming constatnt theta and r_v
   return common.p_hydro(z_lev, th_std, r_v, z_0, p_0)
- 
-def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300., 
-  r_0=-1., RH_0=-1., #if none specified, the default will be r_0=.022, 
-  outfile="test.nc", 
+
+def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
+  r_0=-1., RH_0=-1., #if none specified, the default will be r_0=.022,
+  outfile="test.nc",
   pprof="pprof_piecewise_const_rhod",
   outfreq=100, sd_conc=64,
   aerosol = '{"ammonium_sulfate": {"kappa": 0.61, "mean_r": [0.02e-6], "gstdev": [1.4], "n_tot": [60.0e6]}}',
   out_bin = '{"radii": {"rght": 0.0001, "moms": [0], "drwt": "wet", "nbin": 1, "lnli": "log", "left": 1e-09}}',
   SO2_g = 0., O3_g = 0., H2O2_g = 0., CO2_g = 0., HNO3_g = 0., NH3_g = 0.,
-  chem_dsl = False, chem_dsc = False, chem_rct = False, 
+  chem_dsl = False, chem_dsc = False, chem_rct = False,
   chem_rho = 1.8e3,
   sstp_cond = 1,
   sstp_chem = 1,
@@ -354,7 +376,7 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
                                   will add two additional aerosol bins. One of dry radii 1 micron and concentration 10 per m3 and
                                   other of dry radii 8 micron and concentration 5 per m3.
     sd_const_multi_dry_sizes (Optional[int]):  multiplicity (i.e. weighting factor)of the additional super-droplets for gccn
-    large_tail (Optional[bool]) : use more SD to better represent the large tail of the initial aerosol distribution 
+    large_tail (Optional[bool]) : use more SD to better represent the large tail of the initial aerosol distribution
 
     out_bin (Optional[json str]): dict of dicts defining spectrum diagnostics, e.g.:
 
@@ -414,11 +436,11 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
   gccn = json.loads(opts["gccn"])
 
   # default water content
-  if ((opts["r_0"] < 0) and (opts["RH_0"] < 0)): 
+  if ((opts["r_0"] < 0) and (opts["RH_0"] < 0)):
     print "both r_0 and RH_0 negative, using default r_0 = 0.022"
     r_0 = .022
   # water coontent specified with RH
-  if ((opts["r_0"] < 0) and (opts["RH_0"] >= 0)): 
+  if ((opts["r_0"] < 0) and (opts["RH_0"] >= 0)):
     r_0 = common.eps * opts["RH_0"] * common.p_vs(T_0) / (p_0 - opts["RH_0"] * common.p_vs(T_0))
 
   # sanity checks for arguments
@@ -429,16 +451,17 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
   state = {
     "t" : 0, "z" : 0,
     "r_v" : np.array([r_0]), "p" : p_0,
-    "th_d" : np.array([common.th_std2dry(th_0, r_0)]), 
+    "th_d" : np.array([common.th_std2dry(th_0, r_0)]),
     "rhod" : np.array([common.rhod(p_0, th_0, r_0)]),
-    "T" : None, "RH" : None
+    "T" : None, "RH" : None,
+    "acnv" : None
   }
 
   if opts["chem_dsl"] or opts["chem_dsc"] or opts["chem_rct"]:
     for key in _Chem_g_id.iterkeys():
-      state.update({ key : np.array([opts[key]])}) 
+      state.update({ key : np.array([opts[key]])})
 
-  info = { "RH_max" : 0, "libcloud_Git_revision" : libcloud_version, 
+  info = { "RH_max" : 0, "libcloud_Git_revision" : libcloud_version,
            "parcel_Git_revision" : parcel_version }
 
   micro = _micro_init(aerosol, gccn, opts, state, info)
@@ -471,15 +494,15 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
         p_hydro = _p_hydro_const_th_rv(state["z"], p_0, th_0, r_0)
       elif pprof == "pprof_const_rhod":
         # as in Grabowski and Wang 2009
-        rho = 1.13 # kg/m3  1.13 
-        state["p"] = _p_hydro_const_rho(state["z"], p_0, rho) 
+        rho = 1.13 # kg/m3  1.13
+        state["p"] = _p_hydro_const_rho(state["z"], p_0, rho)
 
       elif pprof == "pprof_piecewise_const_rhod":
         # as in Grabowski and Wang 2009 but calculating pressure
         # for rho piecewise constant per each time step
         state["p"] = _p_hydro_const_rho(w*dt, state["p"], state["rhod"][0])
 
-      else: raise Exception("pprof should be pprof_const_th_rv, pprof_const_rhod, or pprof_piecewise_const_rhod") 
+      else: raise Exception("pprof should be pprof_const_th_rv, pprof_const_rhod, or pprof_piecewise_const_rhod")
 
       # dry air density
       if pprof == "pprof_const_th_rv":
@@ -492,17 +515,17 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
 
       else:
         state["rhod"][0] = common.rhod(
-          state["p"], 
-          common.th_dry2std(state["th_d"][0], state["r_v"][0]), 
+          state["p"],
+          common.th_dry2std(state["th_d"][0], state["r_v"][0]),
           state["r_v"][0]
         )
 
       # microphysics
-      _micro_step(micro, state, info, opts, it, fout)
- 
+      _micro_step(micro, state, info, opts, it, fout, dt)
+
       # TODO: only if user wants to stop @ RH_max
       #if (state["RH"] < info["RH_max"]): break
- 
+
       # output
       if (it % outfreq == 0):
         print str(round(it / (nt * 1.) * 100, 2)) + " %"
@@ -524,62 +547,62 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
         state["rhod"][0] = tmp_rhod
         state["p"] = tmp_p
 
-        _micro_step(micro, state, info, opts, it, fout)
+        _micro_step(micro, state, info, opts, it, fout, dt)
 
-        if (it % outfreq == 0): 
+        if (it % outfreq == 0):
           rec = it/outfreq
           _output(fout, opts, micro, state, rec, spectra)
-    
+
 def _arguments_checking(opts, spectra, aerosol):
-  if opts["T_0"] < 273.15: 
+  if opts["T_0"] < 273.15:
     raise Exception("temperature should be larger than 0C - microphysics works only for warm clouds")
-  elif ((opts["r_0"] >= 0) and (opts["RH_0"] >= 0)): 
+  elif ((opts["r_0"] >= 0) and (opts["RH_0"] >= 0)):
     raise Exception("both r_0 and RH_0 specified, please use only one")
-  if opts["w"] < 0: 
+  if opts["w"] < 0:
     raise Exception("vertical velocity should be larger than 0")
 
   for name, dct in aerosol.iteritems():
-    # TODO: check if name is valid netCDF identifier 
+    # TODO: check if name is valid netCDF identifier
     # (http://www.unidata.ucar.edu/software/thredds/current/netcdf-java/CDM/Identifiers.html)
     keys = ["kappa", "mean_r", "n_tot", "gstdev"]
     for key in keys:
-      if key not in dct: 
+      if key not in dct:
         raise Exception(">>" + key + "<< is missing in aerosol[" + name + "]")
     for key in dct:
       if key not in keys:
         raise Exception("invalid key >>" + key + "<< in aerosol[" + name + "]")
-    if dct["kappa"] <= 0: 
+    if dct["kappa"] <= 0:
       raise Exception("kappa hygroscopicity parameter should be larger than 0 for aerosol[" + name + "]")
     if type(dct["mean_r"]) != list:
-        raise Exception(">>mean_r<< key in aerosol["+ name +"] must be a list") 
+        raise Exception(">>mean_r<< key in aerosol["+ name +"] must be a list")
     if type(dct["gstdev"]) != list:
-        raise Exception(">>gstdev<< key in aerosol["+ name +"] must be a list") 
+        raise Exception(">>gstdev<< key in aerosol["+ name +"] must be a list")
     if type(dct["n_tot"]) != list:
-        raise Exception(">>n_tot<< key in aerosol["+ name +"] must be a list") 
+        raise Exception(">>n_tot<< key in aerosol["+ name +"] must be a list")
     if not len(dct["mean_r"]) == len(dct["n_tot"]) == len(dct["gstdev"]):
       raise Exception("mean_r, n_tot and gstdev lists should have same sizes for aerosol[" + name + "]")
     for mean_r in dct["mean_r"]:
-      if mean_r <= 0: 
+      if mean_r <= 0:
         raise Exception("mean radius should be > 0 for aerosol[" + name + "]")
     for n_tot in dct["n_tot"]:
-      if n_tot <= 0: 
+      if n_tot <= 0:
         raise Exception("concentration should be > 0 for aerosol[" + name + "]")
     for gstdev in dct["gstdev"]:
-      if gstdev <= 0: 
+      if gstdev <= 0:
         raise Exception("standard deviation should be > 0 for aerosol[" + name + "]")
     # necessary?
-      if gstdev == 1.: 
+      if gstdev == 1.:
         raise Exception("standard deviation should be != 1 to avoid monodisperse distribution for aerosol[" + name + "]")
 
-  #TODO - add similar checks for gccn dict 
+  #TODO - add similar checks for gccn dict
 
 
   for name, dct in spectra.iteritems():
-    # TODO: check if name is valid netCDF identifier 
+    # TODO: check if name is valid netCDF identifier
     # (http://www.unidata.ucar.edu/software/thredds/current/netcdf-java/CDM/Identifiers.html)
     keys = ["left", "rght", "nbin", "drwt", "lnli", "moms"]
     for key in keys:
-      if key not in dct: 
+      if key not in dct:
         raise Exception(">>" + key + "<< is missing in out_bin[" + name + "]")
     for key in dct:
       if key not in keys:
@@ -595,9 +618,9 @@ def _arguments_checking(opts, spectra, aerosol):
     if dct["lnli"] not in ["lin", "log"]:
         raise Exception(">>lnli<< key in out_bin["+ name +"] must be either >>lin<< or >>log<<")
     if type(dct["nbin"]) != int:
-        raise Exception(">>nbin<< key in out_bin["+ name +"] must be an integer number") 
+        raise Exception(">>nbin<< key in out_bin["+ name +"] must be an integer number")
     if type(dct["moms"]) != list:
-        raise Exception(">>moms<< key in out_bin["+ name +"] must be a list") 
+        raise Exception(">>moms<< key in out_bin["+ name +"] must be a list")
     for mom in dct["moms"]:
         if (type(mom) != int):
           if (mom not in _Chem_a_id.keys()):
@@ -613,13 +636,13 @@ if __name__ == '__main__':
   # handling all parcel() arguments as command-line arguments
   prsr = ArgumentParser(add_help=True, description=parcel.__doc__, formatter_class=RawTextHelpFormatter)
   for k in opts:
-    prsr.add_argument('--' + k, 
-      default=opts[k], 
+    prsr.add_argument('--' + k,
+      default=opts[k],
       help = "(default: %(default)s)",
       type = (type(opts[k]) if type(opts[k]) != list else type(opts[k][0])),
       nargs = ('?'          if type(opts[k]) != list else '+')
     )
   args = vars(prsr.parse_args())
 
-  # executing parcel() with command-line arguments unpacked - treated as keyword arguments 
+  # executing parcel() with command-line arguments unpacked - treated as keyword arguments
   parcel(**args)

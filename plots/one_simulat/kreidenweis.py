@@ -52,7 +52,8 @@ def plot_fig1(data, output_folder = '', output_title = ''):
     ax.set_ylabel('time above cloud base [s]')
 
     plt.grid()
-    plt.plot(data.variables["acti_m3"][:] * 4./3 * math.pi * 999.5 * 1e3 * rhod / rho, t,"b", lw=4.)
+    #plt.plot(data.variables["acti_m3"][:] * 4./3 * math.pi * 999.5 * 1e3 * rhod / rho, t,"b", lw=4.)
+    plt.plot(data.variables["acti_m3"][:] * 4./3 * math.pi * 1e3 * 1e3 * rhod / rho, t,"b", lw=4.)
 
     # calculate SO2 gas volume concentration
     tmp1 = fn.mix_ratio_to_mole_frac(data.variables["SO2_g"][:], p, cm.M_SO2, T, rhod)
@@ -64,7 +65,7 @@ def plot_fig1(data, output_folder = '', output_title = ''):
 
     ax.set_ylim([200, 2600])
     ax.set_yticks([200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600])
- 
+
     ax.set_xlim([0., 0.2])
     ax.set_xticks([0., 0.05, 0.1, 0.15, 0.2])
     ax.set_xticklabels(['0', '0.05', '0.1', '0.15', '0.2'])
@@ -81,7 +82,7 @@ def plot_fig1(data, output_folder = '', output_title = ''):
     n_H    = data.variables["chem_H"][:] / cm.M_H
     nom    = np.zeros(t.shape[0])
     den    = np.zeros(t.shape[0])
-    for time in range(t.shape[0]): 
+    for time in range(t.shape[0]):
         for it, val in enumerate(r3[time,:]):
             if val > 0:
                  nom[time] += (n_H[time, it] / (4./3 * math.pi * val * 1e3)) * val
@@ -142,11 +143,11 @@ def plot_fig2(data, output_folder = '', output_title = ''):
             g('set yrange [' +  str(ymin) + ':' + str(ymax) + ']')
             g('set grid')
             g('set nokey')
-    
+
             nd = data.variables['specd_m0'][t,:] * data.variables["rhod"][0] / d_log_rd
-    
+
             plot_rd = Gnuplot.PlotItems.Data(rd * 2 * 1e6, nd * 1e-6, with_="steps lw 2", title="dry radius")
-    
+
             g.plot(plot_rd)
 
 def plot_fig3(data, output_folder = '', output_title = ''):

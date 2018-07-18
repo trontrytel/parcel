@@ -36,6 +36,10 @@ def data(request):
     p_dict['chem_dsc'] = True
     p_dict['chem_rct'] = True
 
+    #p_dict['pprof'] = 'pprof_const_th_rv'
+    #p_dict['pprof'] = 'pprof_const_rhod'
+    p_dict['pprof'] = 'pprof_piecewise_const_rhod'
+
     p_dict['sd_conc']  = 1024
     p_dict['outfreq']  = 10 / (p_dict['dt'] * p_dict['w'])
 
@@ -54,7 +58,7 @@ def data(request):
     #simulation results
     data = netcdf.netcdf_file(p_dict['outfile'],   "r")
 
-    # removing all netcdf files after all tests                                      
+    # removing all netcdf files after all tests
     def removing_files():
         subprocess.call(["rm", p_dict['outfile']])
 
@@ -129,7 +133,7 @@ def test_chem_sulfate_formation(data):
     s6_end = data.variables["chemd_S_VI"][-1, :]
 
     sulf_ppt = fn.mix_ratio_to_mole_frac((np.sum(s6_end) - np.sum(s6_ini)), p, cm.M_H2SO4, T, rhod) * 1e12
-   
+
     print " "
     print "sulfate formation (ppt) = ", sulf_ppt, " vs 170-180 from size resolved models"
 
