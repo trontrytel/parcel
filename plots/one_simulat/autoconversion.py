@@ -13,32 +13,45 @@ import math
 #import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib
 
 from parcel import parcel
+from libcloudphxx import common as cm
 
 def plot_profiles(data, output_folder):
+
+    matplotlib.rcParams.update({'font.size': 8})
 
     plt.figure()
     plots    = []
     legend_l = []
-    for i in range(3):
-        plots.append(plt.subplot(1,3,i+1))
+    for i in range(6):
+        plots.append(plt.subplot(2,3,i+1))
 
     plots[0].set_xlabel('T [K]')
-    plots[1].set_xlabel('rv [g/kg]')
-    plots[2].set_xlabel('RH')
+    plots[1].set_xlabel('RH')
+    plots[2].set_xlabel('acnv [kg/m3/s]')
+    plots[2].set_xlim(-2e-7, 5e-6)
+    plots[2].ticklabel_format(style='sci', axis='x', scilimits=(-6, 0))
+
+    plots[3].set_xlabel('rv [g/kg]')
+    plots[4].set_xlabel('rc [g/kg]')
+    plots[5].set_xlabel('rr [g/kg]')
 
     for ax in plots:
-        ax.set_ylabel('z [m]')
+        ax.set_ylabel('t [s]')
 
-    z = data.variables["z"][:]
+    z = data.variables["t"][:]
     plots[0].plot(data.variables["T"][:]          , z)
-    plots[1].plot(data.variables["r_v"][:] * 1000 , z)
-    plots[2].plot(
+    plots[1].plot(
         data.variables["RH"][:]                     , z,
         [data.variables["RH"][:].max()] * z.shape[0], z,
         [1.] * z.shape[0], z
         )
+    plots[2].plot(data.variables["acnv"][:] * data.variables["rhod"][:], z)
+    plots[3].plot(data.variables["r_v"][:] * 1000 , z)
+    plots[4].plot(data.variables["r_c"][:] * 1000 , z)
+    plots[5].plot(data.variables["r_r"][:] * 1000 , z)
 
     plt.tight_layout()
     plt.savefig(output_folder + "acnv_profiles.pdf")

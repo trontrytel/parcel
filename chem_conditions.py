@@ -3,7 +3,7 @@ from libcloudphxx import common as cm
 import functions as fn
 
 """
-Common initail conditions for: 
+Common initail conditions for:
 test_chem_closed_dsl, test_chem_closed_dsc,    test_chem_closed_rct
 tes_chem_mass_const,  test_chem_init_spectrum, test_sd_convergence
 
@@ -16,12 +16,12 @@ r_init  = fn.rh_to_rv(RH_init, T_init, p_init)
 
 # STP conditions (needed to initialize dry radii distribution)
 p_stp = 101325
-T_stp = 273.15 + 15
+T_stp = 273.15 + 12.05
 
 # calculate rhod for initial gas mixing ratio
 rhod_init   = fn.rhod_calc(T_init, p_init, r_init)
 
-# calculate density of air in the model and in standard conditions 
+# calculate density of air in the model and in standard conditions
 # (needed to initialize dry radii distribution)
 rho_init = p_init / T_init / (r_init / (1.+r_init) * cm.R_v + 1./ (1.+r_init) * cm.R_d)
 rho_stp  = p_stp  / T_stp / cm.R_d
@@ -50,7 +50,7 @@ chem_rho = 1.8e3
 z_max   = 1300
 dt      = .1
 w       = .5
-outfreq = int(z_max / dt / 30) 
+outfreq = int(z_max / dt / 30)
 sd_conc = 4
 outfile = "TODO.nc"
 
