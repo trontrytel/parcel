@@ -95,7 +95,7 @@ def _micro_init(aerosol, gccn, opts, state, info):
 
   # lagrangian scheme options
   opts_init = lgrngn.opts_init_t()
-  for opt in ["dt", "sd_conc", "chem_rho", "rng_seed"]:
+  for opt in ["dt", "sd_conc", "chem_rho", "sstp_cond", "rng_seed"]:
     setattr(opts_init, opt, opts[opt])
   opts_init.n_sd_max    = opts_init.sd_conc
 

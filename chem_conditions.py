@@ -16,7 +16,7 @@ r_init  = fn.rh_to_rv(RH_init, T_init, p_init)
 
 # STP conditions (needed to initialize dry radii distribution)
 p_stp = 101325
-T_stp = 273.15 + 12.05
+T_stp = 273.15 + 15
 
 # calculate rhod for initial gas mixing ratio
 rhod_init   = fn.rhod_calc(T_init, p_init, r_init)
