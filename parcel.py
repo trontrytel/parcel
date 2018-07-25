@@ -95,7 +95,7 @@ def _micro_init(aerosol, gccn, opts, state, info):
 
   # lagrangian scheme options
   opts_init = lgrngn.opts_init_t()
-  for opt in ["dt", "sd_conc", "chem_rho", "sstp_cond"]:
+  for opt in ["dt", "sd_conc", "chem_rho", "sstp_cond", "rng_seed"]:
     setattr(opts_init, opt, opts[opt])
   opts_init.n_sd_max    = opts_init.sd_conc
 
@@ -338,7 +338,8 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
   gccn_flag = False,
   gccn = '{}',
   sd_const_multi_dry_sizes = 2,
-  large_tail = False
+  large_tail = False,
+  rng_seed = 13
 ):
   """
   Args:
@@ -356,6 +357,7 @@ def parcel(dt=.1, z_max=200., w=1., T_0=300., p_0=101300.,
                                   valid options are: pprof_const_th_rv, pprof_const_rhod, pprof_piecewise_const_rhod
     wait (Optional[float]):       number of timesteps to run parcel model with vertical velocity=0 at the end of simulation
                                   (added for testing)
+    rng_seed (Optional[float]):   seed for random number generator for droplet initialization
     sd_conc (Optional[int]):      number of moving bins (super-droplets)
 
     aerosol (Optional[json str]): dict of dicts defining aerosol distribution, e.g.:
