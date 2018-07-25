@@ -27,8 +27,10 @@ def data(request):
     p_dict['dt']       = 1.
     p_dict['w']        = 0.5
     p_dict['z_max']    = 1500.
+
     p_dict['RH_0']     = 0.999
     p_dict['T_0']      = 273.15 + 5
+
     p_dict['p_0']      = 90000.
     p_dict['wait']     = 0
 
