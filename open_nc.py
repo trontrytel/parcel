@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-np.set_printoptions(precision=18)
+np.set_printoptions(precision=25)
 np.set_printoptions(threshold=np.inf)
 
 
@@ -159,8 +159,6 @@ def open_nc(dct):
  r_vVals = f.variables[r_vKey][:]
  zVals = f.variables[zKey][:]
  tVals = f.variables[tKey][:]
-
- print(conserveMass(r_vVals, atempY, ctempY, rtempY))
 
  # writes each array of variables to the file
  for key in f.variables:

@@ -174,6 +174,7 @@ def _micro_step(micro, state, info, opts, it, fout, dt):
   if micro.opts_init.chem_switch:
     ambient_chem = dict((v, state[k]) for k,v in _Chem_g_id.iteritems())
 
+
   # call libcloudphxx microphysics
   micro.step_sync(libopts, state["th_d"], state["r_v"], state["rhod"], ambient_chem=ambient_chem)
 
